@@ -116,13 +116,13 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     cardImage: {
-        height: 100,
-        borderRadius: 8,
-        marginVertical: 8,
+        height: 180,
+        borderRadius: 10,
+        marginBottom: 10,
         width: '100%',
     },
     cardTop: {
-        height: 130,
+        height: 200,
     },
 
 })

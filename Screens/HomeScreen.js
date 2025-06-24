@@ -54,7 +54,7 @@ const HomeScreen = ({ navigation, route }) => {
                         >
                             {/* Top fixed section */}
                             <View style={styles.cardTop}>
-                            <Text style={styles.seller}>Seller</Text>
+                            {/*<Text style={styles.seller}>Seller</Text>*/}
 
                             {item.image ? (<Image
                                 source={{ uri: item.image }}
