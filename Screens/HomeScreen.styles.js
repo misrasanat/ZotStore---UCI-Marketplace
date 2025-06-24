@@ -25,9 +25,11 @@ const styles = StyleSheet.create({
         height: 40,
         borderColor: '#ccc',
         borderWidth: 1,
+        borderColor: '#FFFF00',
         borderRadius: 8,
         paddingHorizontal: 12,
         marginBottom: 12,
+        marginTop: 9,
     },
     sellButton: {
         backgroundColor: '#007AFF',
@@ -52,8 +54,11 @@ const styles = StyleSheet.create({
     card: {
         flex: 1,
         margin: 8,
+        justifyContent: 'center',
         backgroundColor: '#f9f9f9',
         borderRadius: 10,
+        borderColor: '#0000FF',
+        borderWidth: 1.2,
         padding: 10,
         minWidth: '45%',
     },
@@ -61,15 +66,24 @@ const styles = StyleSheet.create({
         height: 100,
         backgroundColor: '#ddd',
         borderRadius: 8,
+        borderColor: '#FFFF00',
+        borderWidth: 0.5,
         marginVertical: 8,
     },
     seller: {
         fontSize: 14,
         color: '#333',
+        alignContent: 'center',
     },
     price: {
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    noListings: {
+        textAlign: 'center',
+        marginTop: 40,
+        fontSize: 36,
+        color: '#FFD000',
     },
 })
 export default styles;
