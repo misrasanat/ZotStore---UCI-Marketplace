@@ -44,12 +44,32 @@ const HomeScreen = ({ navigation, route }) => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listingsContainer}
                     renderItem={({ item }) => (
-                    <View style={styles.card}>
-                        <Text style={styles.seller}>Seller</Text>
-                        <View style={styles.imagePlaceholder} />
-                        <Text style={styles.price}>{item.name} — ${item.price}</Text>
-                    </View>
-                    )}
+                        <TouchableOpacity
+                            style={styles.card}
+                            onPress={() => {
+                                console.log('Card tapped:', item);
+                                // navigation.navigate('ItemDetail', { item }); // optional: hook to details screen
+                            }}
+                            activeOpacity={0.85}
+                        >
+                            {/* Top fixed section */}
+                            <View style={styles.cardTop}>
+                            <Text style={styles.seller}>Seller</Text>
+
+                            {item.image ? (<Image
+                                source={{ uri: item.image }}
+                                style={styles.cardImage}
+                                resizeMode="cover"
+                                />
+                            ) : (
+                                <View style={styles.imagePlaceholder} />
+                            )}
+                            </View>
+
+                            {/* Bottom flexible section */}
+                            <Text style={styles.price}> {item.name} — ${item.price} </Text>
+                        </TouchableOpacity> 
+                        )}
                 />
                 )}
         </View>

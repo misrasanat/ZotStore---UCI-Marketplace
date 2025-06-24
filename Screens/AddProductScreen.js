@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 const AddProductScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -21,6 +22,8 @@ const handleSubmit = () => {
         id: Date.now().toString(), // unique key
         name,
         price: parseFloat(price).toFixed(2),
+        image,
+        desc,
     };
     navigation.navigate('Home', { newItem });
 };
@@ -32,7 +35,13 @@ const handleSubmit = () => {
       <TextInput style={styles.input} placeholder="Product Name" value={name} onChangeText={setName} />
       <TextInput style={styles.input} placeholder="Price (Ex: 49.99)" value={price}
        onChangeText={(text) => {
-        const formatted = text.replace(/[^0-9.]/g, ''); // remove non-numeric and non-dot
+        const formatted = text.replace(/[^0-9.]/g, '');
+
+        // Allow clearing the field entirely
+        if (formatted === '') {
+            setPrice('');
+            return;
+        }
         const decimalMatch = formatted.match(/^(\d+)(\.\d{0,2})?$/); // allow up to 2 decimals
             if (decimalMatch) {
                 setPrice(formatted);
@@ -41,9 +50,33 @@ const handleSubmit = () => {
         keyboardType="numeric" />
       <TextInput style={styles.input} placeholder="Description" value={desc} onChangeText={setDesc} />
 
-      <TouchableOpacity style={styles.imageUpload}>
+        <TouchableOpacity style={styles.imageUpload} 
+        onPress={async () => {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Sorry, we need camera roll permissions to make this work!');
+                return;
+            }
+
+            let result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                quality: 0.8,
+            });
+
+            if (!result.canceled) {
+                setImage(result.assets[0].uri);
+            }
+        }}
+        >
         <Text style={styles.imageUploadText}>Upload Image</Text>
       </TouchableOpacity>
+      {image && (
+        <Image
+            source={{ uri: image }}
+            style={{ width: '100%', height: 200, marginBottom: 16, borderRadius: 8 }}
+            resizeMode="cover"
+        />
+        )}
 
       <Button title="Submit" onPress={handleSubmit} disabled={!name.trim() || !price.trim() || !desc.trim()}/>
     </View>
@@ -70,7 +103,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   imageUpload: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#194a7a',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
