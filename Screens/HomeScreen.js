@@ -47,7 +47,7 @@ const HomeScreen = ({ navigation, route }) => {
                     <View style={styles.card}>
                         <Text style={styles.seller}>Seller</Text>
                         <View style={styles.imagePlaceholder} />
-                        <Text style={styles.price}>{item.name} — {item.price}</Text>
+                        <Text style={styles.price}>{item.name} — ${item.price}</Text>
                     </View>
                     )}
                 />

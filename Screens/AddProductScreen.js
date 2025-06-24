@@ -8,27 +8,44 @@ const AddProductScreen = ({ navigation }) => {
   const [image, setImage] = useState(null); // hook this to an image picker later
 
 const handleSubmit = () => {
+    
+    if (!name.trim() || !price.trim() || !desc.trim()) {
+        alert("Please fill in all fields before submitting.");
+        return;
+    }
+    if (isNaN(price)) {
+        alert("Price must be a valid number.");
+        return;
+    }
     const newItem = {
         id: Date.now().toString(), // unique key
         name,
-        price,
+        price: parseFloat(price).toFixed(2),
     };
     navigation.navigate('Home', { newItem });
 };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Add Product</Text>
+      <Text style={styles.header}>Add Listing</Text>
 
       <TextInput style={styles.input} placeholder="Product Name" value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Price" value={price} onChangeText={setPrice} keyboardType="numeric" />
+      <TextInput style={styles.input} placeholder="Price (Ex: 49.99)" value={price}
+       onChangeText={(text) => {
+        const formatted = text.replace(/[^0-9.]/g, ''); // remove non-numeric and non-dot
+        const decimalMatch = formatted.match(/^(\d+)(\.\d{0,2})?$/); // allow up to 2 decimals
+            if (decimalMatch) {
+                setPrice(formatted);
+            }
+        }}
+        keyboardType="numeric" />
       <TextInput style={styles.input} placeholder="Description" value={desc} onChangeText={setDesc} />
 
       <TouchableOpacity style={styles.imageUpload}>
         <Text style={styles.imageUploadText}>Upload Image</Text>
       </TouchableOpacity>
 
-      <Button title="Submit" onPress={handleSubmit} />
+      <Button title="Submit" onPress={handleSubmit} disabled={!name.trim() || !price.trim() || !desc.trim()}/>
     </View>
   );
 };
