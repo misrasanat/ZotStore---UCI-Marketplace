@@ -49,7 +49,7 @@ export default function OTPVerification({ navigation, route }) {
       Alert.alert('Success', successMessage, [
         {
           text: 'OK',
-          onPress: () => navigation.navigate('Home')
+          onPress: () => navigation.navigate('Signup2', { email })
         }
       ]);
     } else {
