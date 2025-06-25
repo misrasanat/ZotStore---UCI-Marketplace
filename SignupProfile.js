@@ -30,7 +30,7 @@ export default function Signup2({ navigation, route }) {
     }
 
     // TODO: Replace with real signup logic
-    navigation.navigate('Profile', { name, phone, bio });
+    navigation.navigate('Home');
   };
 
 

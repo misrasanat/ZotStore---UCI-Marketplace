@@ -80,7 +80,7 @@ const HomeScreen = ({ navigation, route }) => {
                     )}
                 </View>
                     <View style={styles.navBar}>
-                        <TouchableOpacity style={styles.navItem}>
+                        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
                             <Text style={styles.navText}>🏠</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.navItem}>
@@ -89,7 +89,7 @@ const HomeScreen = ({ navigation, route }) => {
                         <TouchableOpacity style={styles.navItem}>
                             <Text style={styles.navText}>📦</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navItem}>
+                        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
                             <Text style={styles.navText}>👤</Text>
                         </TouchableOpacity>
                     </View>
