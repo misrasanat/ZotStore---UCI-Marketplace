@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
+
 export default function Profile() {
   // Mock user data
   const [profilePic, setProfilePic] = useState(null);
@@ -65,6 +66,7 @@ export default function Profile() {
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Picture & Name */}
       <View style={styles.headerSection}>
@@ -193,7 +195,24 @@ export default function Profile() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
+      
     </ScrollView>
+        <View style={styles.navBar}>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+              <Text style={styles.navText}>🏠</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navText}>📬</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navText}>📦</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
+              <Text style={styles.navText}>👤</Text>
+          </TouchableOpacity>
+        </View>
+    </View>
+    
   );
 }
 
@@ -373,4 +392,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  navBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        height: 60,
+        backgroundColor: '#fdfff5',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        elevation: 10, // Android shadow
+        shadowColor: '#000', // iOS shadow
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    navItem: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    navText: {
+        fontSize: 26,
+        color: '#444',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
 });
