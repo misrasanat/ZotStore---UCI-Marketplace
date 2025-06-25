@@ -7,8 +7,10 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        padding: 16,
         backgroundColor: '#fff',
+    },
+    container2: {
+        padding: 16,
     },
     fullScreen: {
         flex: 1,
@@ -21,22 +23,33 @@ const styles = StyleSheet.create({
     flexList: {
         flex: 1,
     },
+    topSection: {
+        backgroundColor: '#fffff0', // soft gold vibe — tweak if you want it richer
+        padding: 16,
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 3,
+    },
     searchBar: {
-        height: 40,
-        borderWidth: 1,
-        borderColor: '#fbf2c4',
-        borderRadius: 8,
-        paddingHorizontal: 12,
+        height: 44,
+        borderRadius: 22,                // pill shape
+        backgroundColor: '#fff',
+        paddingHorizontal: 16,
         marginBottom: 12,
         marginTop: 9,
-        
-        backgroundColor: '#fff', // needed for the shadow to show well
+
+        borderColor: '#e4dba4',
+        borderWidth: 1,
 
         // iOS shadow
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowOpacity: 0.06,
+        shadowRadius: 2,
 
         // Android elevation
         elevation: 2,
@@ -62,31 +75,50 @@ const styles = StyleSheet.create({
         opacity: 0.85,
     },
     listingsContainer: {
-        paddingBottom: 32,
+        paddingBottom: '60%',
         flexGrow: 1,
     },
     card: {
         flex: 1,
         margin: 8,
-        backgroundColor: '#f8f8ff',
+        backgroundColor: '000',
         borderRadius: 10,
-        paddingHorizontal: 14,
+        paddingHorizontal: 8,
         paddingBottom: 14,
-        paddingTop: 20,             // 👈 consistent top spacing
+        paddingTop: 20,             //  consistent top spacing
         minWidth: '45%',
-        justifyContent: 'flex-start', // 👈 ensure top alignment
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-        elevation: 2,
-        borderWidth: 0,
+        justifyContent: 'flex-start', //  ensure top alignment
+        // shadowColor: '000',
+        // shadowOffset: { width: 0, height: 1 },
+        // shadowOpacity: 0.08,
+        // shadowRadius: 4,
+        // elevation: 2,
+        // borderWidth: 0,
+    },
+    cardImage: {
+        height: 180,
+        borderRadius: 10,
+        marginBottom: 10,
+        width: '100%',
+    },
+    cardTop: {
+        height: 200,
     },
     imagePlaceholder: {
-        height: 100,
-        backgroundColor: '#eee', // softer than #ddd
-        borderRadius: 8,
-        marginVertical: 8,
+        height: 180,
+        backgroundColor: '#f8f8ff',
+        borderRadius: 10,
+        marginBottom: 10,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    placeholderText: {
+        color: '#999',
+        fontSize: 30,
+        fontWeight: 'Bold',
+        textAlign: 'center',
+        opacity: 0.8,
     },
     seller: {
         fontSize: 14,
@@ -99,11 +131,9 @@ const styles = StyleSheet.create({
     price: {
         fontWeight: 'bold',
         fontSize: 16,
-        flexWrap: 'wrap',
-        paddingTop: 10,
-        fontFamily: 'Inter-SemiBold', // or a custom one like 'Inter-SemiBold' or 'Roboto'
-        letterSpacing: 0.3,
-        color: '#1a1a1a',
+        color: '#2e8b57', // soft green — try '#28a745' for something more vibrant
+        fontFamily: 'Inter-SemiBold',
+        marginTop: 4,
     },
     noListings: {
         textAlign: 'center',
@@ -115,15 +145,43 @@ const styles = StyleSheet.create({
         opacity: 0.85,                 // subtle transparency
         fontWeight: '500',
     },
-    cardImage: {
-        height: 180,
-        borderRadius: 10,
-        marginBottom: 10,
-        width: '100%',
+    name: {
+        fontWeight: '600',
+        fontSize: 20,
+        color: '#222',
+        fontFamily: 'Inter-Medium',
+        letterSpacing: 0.3,
+        marginTop: 2,
     },
-    cardTop: {
-        height: 200,
+    navBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        height: 60,
+        backgroundColor: '#fdfff5',
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        elevation: 10, // Android shadow
+        shadowColor: '#000', // iOS shadow
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
+    navItem: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    navText: {
+        fontSize: 26,
+        color: '#444',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    
 
 })
 export default styles;
