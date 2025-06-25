@@ -24,7 +24,7 @@ export default function App() {
         <Stack.Screen name="Signup2" component={Signup2} />
         <Stack.Screen name="OTPVerification" component={OTPVerification} />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="AddProduct" component={AddProductScreen} />
+        <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
