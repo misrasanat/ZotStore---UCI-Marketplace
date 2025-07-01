@@ -1,6 +1,9 @@
 import React from 'react';
 import styles from './HomeScreen.styles';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList, SafeAreaView} from 'react-native';
+import { db } from '../firebase';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+
 
 let curr_items = [];
 
@@ -8,11 +11,17 @@ const HomeScreen = ({ navigation, route }) => {
     const [items, setItems] = React.useState([]);
 
     React.useEffect(() => {
-        if (route.params?.newItem) {
-            curr_items.push(route.params.newItem); // mutate global-ish store
-            setItems([...curr_items]); // update state to reflect it
-        }
-    }, [route.params?.newItem]);
+        const q = query(collection(db, 'listings'), orderBy('timestamp', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetched = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            }));
+            setItems(fetched);
+        });
+
+        return () => unsubscribe();
+    }, []);
     return (
         <SafeAreaView style={styles.safeContainer}>
         <View style={styles.container}>

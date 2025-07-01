@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { auth } from './firebase';
 
 export default function Signup({ navigation }) {
   const [email, setEmail] = useState('');
