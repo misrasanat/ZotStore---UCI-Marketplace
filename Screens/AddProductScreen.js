@@ -1,31 +1,61 @@
 import React, { useState } from 'react';
+import 'react-native-get-random-values';
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { db } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
+import { v4 as uuidv4 } from 'uuid';
 
 const AddProductScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [desc, setDesc] = useState('');
   const [image, setImage] = useState(null); // hook this to an image picker later
+  
 
-const handleSubmit = () => {
+
+const handleSubmit = async () => {
     
     if (!name.trim() || !price.trim() || !desc.trim()) {
-        alert("Please fill in all fields before submitting.");
-        return;
+      alert("Please fill in all fields before submitting.");
+      return;
     }
     if (isNaN(price)) {
-        alert("Price must be a valid number.");
-        return;
+      alert("Price must be a valid number.");
+      return;
     }
-    const newItem = {
-        id: Date.now().toString(), // unique key
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+    let imageUrl = '';
+
+    try {
+      if (image) {
+        const response = await fetch(image);
+        const blob = await response.blob();
+        const imageRef = ref(storage, `listingImages/${uuidv4()}`);
+        await uploadBytes(imageRef, blob);
+        imageUrl = await getDownloadURL(imageRef);
+      }
+
+      await addDoc(collection(db, 'listings'), {
         name,
         price: parseFloat(price).toFixed(2),
-        image,
         desc,
-    };
-    navigation.navigate('Home', { newItem });
+        image: imageUrl,
+        email: user ? user.email : 'guest@zotstore.com',
+        timestamp: serverTimestamp()
+      });
+
+      alert("Listing added!");
+      navigation.navigate('Home');
+    } catch (error) {
+      console.error("Error adding listing: ", error);
+      alert("Something went wrong while adding your listing.");
+    }
 };
 
   return (
