@@ -58,7 +58,7 @@ const HomeScreen = ({ navigation, route }) => {
                             <TouchableOpacity
                                 style={styles.card}
                                 onPress={() => {
-                                    console.log('Card tapped:', item);
+                                    navigation.navigate('View Listing', { item });
                                     // navigation.navigate('ItemDetail', { item }); // optional: hook to details screen
                                 }}
                                 activeOpacity={0.85}

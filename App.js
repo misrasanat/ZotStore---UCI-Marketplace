@@ -10,6 +10,7 @@ import Signup from './Signup';
 import OTPVerification from './OTPVerification';
 import Profile from './profile';
 import Signup2 from './SignupProfile';
+import ViewListingScreen from './Screens/ViewListingScreen.js';
 
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +28,7 @@ export default function App() {
         <Stack.Screen name="OTPVerification" component={OTPVerification} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true }} />
+        <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: true }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

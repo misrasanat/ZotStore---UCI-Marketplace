@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, Scro
 import * as ImagePicker from 'expo-image-picker';
 
 
-export default function Profile() {
+export default function Profile({ navigation }) {
   // Mock user data
   const [profilePic, setProfilePic] = useState(null);
   const [name, setName] = useState('Peter Anteater');
