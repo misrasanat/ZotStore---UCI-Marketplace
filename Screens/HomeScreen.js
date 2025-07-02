@@ -9,6 +9,10 @@ let curr_items = [];
 
 const HomeScreen = ({ navigation, route }) => {
     const [items, setItems] = React.useState([]);
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const filteredItems = items.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     React.useEffect(() => {
         const q = query(collection(db, 'listings'), orderBy('timestamp', 'desc'));
@@ -31,6 +35,8 @@ const HomeScreen = ({ navigation, route }) => {
                     style={styles.searchBar}
                     placeholder="🔎 Search ZotStore"
                     placeholderTextColor="#000"
+                    value={searchQuery}
+                    onChangeText={text => setSearchQuery(text)}
                 />
 
                 {/* Sell Button */}
@@ -50,7 +56,7 @@ const HomeScreen = ({ navigation, route }) => {
                     <Text style={styles.noListings}>No current Listings</Text>
                 ) : (
                     <FlatList
-                        data={items}
+                        data={filteredItems}
                         numColumns={2}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.listingsContainer}
