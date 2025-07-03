@@ -1,18 +1,31 @@
 import React from 'react';
 import styles from './HomeScreen.styles';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList, SafeAreaView} from 'react-native';
+import { db } from '../firebase';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+
 
 let curr_items = [];
 
 const HomeScreen = ({ navigation, route }) => {
     const [items, setItems] = React.useState([]);
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const filteredItems = items.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     React.useEffect(() => {
-        if (route.params?.newItem) {
-            curr_items.push(route.params.newItem); // mutate global-ish store
-            setItems([...curr_items]); // update state to reflect it
-        }
-    }, [route.params?.newItem]);
+        const q = query(collection(db, 'listings'), orderBy('timestamp', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetched = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            }));
+            setItems(fetched);
+        });
+
+        return () => unsubscribe();
+    }, []);
     return (
         <SafeAreaView style={styles.safeContainer}>
         <View style={styles.container}>
@@ -22,6 +35,8 @@ const HomeScreen = ({ navigation, route }) => {
                     style={styles.searchBar}
                     placeholder="🔎 Search ZotStore"
                     placeholderTextColor="#000"
+                    value={searchQuery}
+                    onChangeText={text => setSearchQuery(text)}
                 />
 
                 {/* Sell Button */}
@@ -41,7 +56,7 @@ const HomeScreen = ({ navigation, route }) => {
                     <Text style={styles.noListings}>No current Listings</Text>
                 ) : (
                     <FlatList
-                        data={items}
+                        data={filteredItems}
                         numColumns={2}
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.listingsContainer}
@@ -49,7 +64,7 @@ const HomeScreen = ({ navigation, route }) => {
                             <TouchableOpacity
                                 style={styles.card}
                                 onPress={() => {
-                                    console.log('Card tapped:', item);
+                                    navigation.navigate('View Listing', { item });
                                     // navigation.navigate('ItemDetail', { item }); // optional: hook to details screen
                                 }}
                                 activeOpacity={0.85}
