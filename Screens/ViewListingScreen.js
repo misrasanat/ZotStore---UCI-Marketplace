@@ -1,11 +1,16 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { formatDistanceToNow } from 'date-fns';
 
 const ViewListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
+  const updatedTime = item.timestamp?.toDate
+    ? formatDistanceToNow(item.timestamp.toDate(), { addSuffix: true })
+    : 'just now';
 
   return (
     <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollContent}>
       {/* Product Image */}
       {item.image ? (
         <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
@@ -16,7 +21,13 @@ const ViewListingScreen = ({ route, navigation }) => {
       )}
 
       {/* Product Info */}
-      <Text style={styles.title}>{item.name}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{item.name}</Text>
+        <View style={styles.updatedContainer}>
+          <Text style={styles.updatedAt}>Updated: {updatedTime}</Text>
+        </View>
+      </View>
+
       <Text style={styles.price}>${item.price}</Text>
       <Text style={styles.sectionLabel}>About Listing</Text>
       <Text style={styles.desc}>{item.desc}</Text>
@@ -32,7 +43,7 @@ const ViewListingScreen = ({ route, navigation }) => {
           />
           <View style={styles.profileText}>
             <Text style={styles.profileName}>Peter Anteater</Text>
-            <Text style={styles.subtleText}>Active 2 hours ago</Text>
+            <Text style={styles.subtleText}>Member Since 03/25</Text>
             <Text style={styles.subtleText}>Undergraduate · 3rd Year</Text>
           </View>
         </TouchableOpacity>
@@ -44,7 +55,7 @@ const ViewListingScreen = ({ route, navigation }) => {
         <Text style={styles.locationIcon}>📍</Text>
         <Text style={styles.locationText}>Middle Earth — Balin</Text>
       </View>
-
+    </ScrollView>
       {/* Floating Buttons */}
       <TouchableOpacity
         style={styles.messageButton}
@@ -55,7 +66,7 @@ const ViewListingScreen = ({ route, navigation }) => {
 
       <TouchableOpacity
         style={styles.editButton}
-        onPress={() => alert("Edit listing feature coming soon!")}
+        onPress={() => navigation.navigate('Edit Listing', { item })}
       >
         <Text style={styles.buttonText}>✏️</Text>
       </TouchableOpacity>
@@ -85,6 +96,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 40,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    //alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
+
+  updatedContainer: {
+    flexShrink: 1,
+    maxWidth: '40%',
+    alignItems: 'flex-end',
+    paddingTop: '2%'
+  },
+
+  updatedAt: {
+    fontSize: 14,
+    color: '#888',
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
   imagePlaceholder: {
     width: '100%',
     height: 250,
@@ -109,6 +140,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginBottom: 4,
     color: '#1a1a1a',
+    flexShrink: 1,
+    maxWidth: '60%',
+    alignItems: 'flex-end',
+
   },
   price: {
     fontSize: 25,
@@ -141,6 +176,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginBottom: 20,
+  },
+  scrollContent: {
+    paddingBottom: '40%', // room for nav bar and floating buttons
   },
   messageButton: {
     position: 'absolute',
