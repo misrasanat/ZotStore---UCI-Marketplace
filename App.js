@@ -11,6 +11,8 @@ import OTPVerification from './OTPVerification';
 import Profile from './profile';
 import Signup2 from './SignupProfile';
 import ViewListingScreen from './Screens/ViewListingScreen.js';
+import EditListingScreen from './Screens/EditListingScreen.js';
+
 
 
 const Stack = createNativeStackNavigator();
@@ -19,7 +21,7 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Auth" component={Auth} />
         <Stack.Screen name="Login" component={Login} />
@@ -29,6 +31,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true }} />
         <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: true }} />
+        <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: true }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
