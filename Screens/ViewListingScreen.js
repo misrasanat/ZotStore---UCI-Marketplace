@@ -74,10 +74,10 @@ const ViewListingScreen = ({ route, navigation }) => {
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
             <Text style={styles.navText}>📬</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
             <Text style={styles.navText}>📦</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
@@ -250,33 +250,33 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   navBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        height: 60,
-        backgroundColor: '#fdfff5',
-        borderTopWidth: 1,
-        borderTopColor: '#ddd',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        elevation: 10, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: { width: 0, height: -1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    navItem: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    navText: {
-        fontSize: 26,
-        color: '#444',
-        fontWeight: '600',
-        textAlign: 'center',
-    },
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 60,
+    backgroundColor: '#fdfff5',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    elevation: 10, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: {
+    fontSize: 26,
+    color: '#444',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
 
 export default ViewListingScreen;
