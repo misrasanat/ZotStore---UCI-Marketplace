@@ -12,6 +12,10 @@ import Profile from './profile';
 import Signup2 from './SignupProfile';
 import ViewListingScreen from './Screens/ViewListingScreen.js';
 import EditListingScreen from './Screens/EditListingScreen.js';
+import MyListingsScreen from './Screens/MyListingsScreen.js';
+import ChatScreen from './Screens/ChatScreen.js';
+import InboxScreen from './Screens/InboxScreen.js';
+
 
 
 
@@ -21,7 +25,7 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Auth" component={Auth} />
         <Stack.Screen name="Login" component={Login} />
@@ -32,6 +36,9 @@ export default function App() {
         <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true }} />
         <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: true }} />
         <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: true }} />
+        <Stack.Screen name="My Listings" component={MyListingsScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Inbox Screen" component={InboxScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Chat Screen" component={ChatScreen} options={{headerShown: false}} />
       </Stack.Navigator>
     </NavigationContainer>
   );
