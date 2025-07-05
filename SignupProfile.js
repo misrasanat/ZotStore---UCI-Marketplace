@@ -1,36 +1,68 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { auth  } from './firebase';
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { useAuth } from './AuthContext';
 
 export default function Signup2({ navigation, route }) {
-  const { email = '' } = route?.params || {};
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
+  
+  const db = getFirestore();
+  const user = auth.currentUser;
+  const uid = user.uid;
+  const userRef = doc(db, 'users', uid);
+
+
 
   const validatePhone = (phone) => {
-    // Basic phone validation - at least 10 digits
     const phoneRegex = /^\d{10,}$/;
     return phoneRegex.test(phone.replace(/\D/g, ''));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async() => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter your name.');
       return;
     }
-
     if (!phone.trim()) {
       Alert.alert('Error', 'Please enter your phone number.');
       return;
     }
-
     if (!validatePhone(phone)) {
       Alert.alert('Invalid Phone', 'Please enter a valid phone number (at least 10 digits).');
       return;
     }
 
-    // TODO: Replace with real signup logic
-    navigation.navigate('Home');
+    try {
+      await setDoc(userRef, {
+        name: name,
+        phone: phone,
+        bio: bio,
+        email: user.email,
+        uid: uid,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isVerified: false,
+        isActive: true,
+      });
+      Alert.alert('Success', 'Profile created successfully', [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Force navigation to Home by resetting the navigation stack
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+          }
+        }
+      ]);
+    } catch (error) {
+      console.error('Error setting user data:', error);
+      Alert.alert('Error', 'Failed to create profile. Please try again.');
+    }
   };
 
 
