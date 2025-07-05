@@ -1,41 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-
+import { auth, signOut } from './firebase';
+import { useAuth } from './AuthContext';
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function Profile({ navigation }) {
-  // Mock user data
+  // const { userProfile } = useAuth();
+
   const [profilePic, setProfilePic] = useState(null);
-  const [name, setName] = useState('Peter Anteater');
-  const [email] = useState('panteater@uci.edu');
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('Zot! Marketplace enthusiast.');
+  const [bio, setBio] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Mock stats
+  const db = getFirestore();
+  const storage = getStorage();
+  const user = auth.currentUser;
+  const uid = user?.uid;  
+  const userRef = doc(db, 'users', uid);
+
+  // Mock stats (keeping these for now as requested)
   const listings = 5;
   const sold = 2;
   const bought = 3;
 
+  // Load user data from Firestore
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!uid) return;
+      
+      try {
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setName(userData.name || '');
+          setPhone(userData.phone || '');
+          setBio(userData.bio || '');
+      
+          if (userData.profilePicUrl) {
+            setProfilePic(userData.profilePicUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        Alert.alert('Error', 'Failed to load profile data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [uid]);
+
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setProfilePic(result.assets[0].uri);
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      
+      if (!result.canceled) {
+        setProfilePic(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert('Profile updated!');
+  const handleSave = async () => {
+    if (!uid) return;
+    
+    try {
+      let profilePicUrl = null;
+      if (profilePic && !profilePic.startsWith('http')) {
+        const response = await fetch(profilePic);
+        const blob = await response.blob();
+        const storageRef = ref(storage, `profilePics/${uid}`);
+        
+        await uploadBytes(storageRef, blob);
+        profilePicUrl = await getDownloadURL(storageRef);
+      } else if (profilePic && profilePic.startsWith('http')) {
+        // If it's already a URL, keep it
+        profilePicUrl = profilePic;
+      }
+      
+      // Update Firestore with user data and profile picture URL
+      await setDoc(userRef, {
+        name: name,
+        phone: phone,
+        bio: bio,
+        email: user.email,
+        uid: uid,
+        profilePic: profilePicUrl,
+        updatedAt: new Date(),
+      }, { merge: true });
+      
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
   };
 
   const handleChangePassword = () => {
@@ -55,9 +130,15 @@ export default function Profile({ navigation }) {
     Alert.alert('Password changed!');
   };
 
-  const handleLogout = () => {
-    // TODO: Add real logout logic
-    Alert.alert('Logged out!');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('User logged out successfully');
+      // Navigation will be handled automatically by AuthContext
+    } catch (error) {
+      console.error('Error logging out:', error);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   const handleAdditionalSettings = () => {
@@ -74,6 +155,7 @@ export default function Profile({ navigation }) {
           <Image
             source={profilePic ? { uri: profilePic } : require('./assets/icon.png')}
             style={styles.avatar}
+            defaultSource={require('./assets/icon.png')}
           />
           {isEditing && <Text style={styles.editPhotoText}>Edit Photo</Text>}
         </TouchableOpacity>
@@ -85,9 +167,9 @@ export default function Profile({ navigation }) {
             placeholder="Full Name"
           />
         ) : (
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{loading ? 'Loading...' : (name || 'No name set')}</Text>
         )}
-        <Text style={styles.email}>{email}</Text>
+        <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
       </View>
 
       {/* Account Info */}
@@ -104,7 +186,7 @@ export default function Profile({ navigation }) {
               keyboardType="phone-pad"
             />
           ) : (
-            <Text style={styles.infoValue}>{phone || 'Not set'}</Text>
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
           )}
         </View>
         <View style={styles.infoRow}>
@@ -118,7 +200,7 @@ export default function Profile({ navigation }) {
               multiline
             />
           ) : (
-            <Text style={styles.infoValue}>{bio}</Text>
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (bio || 'No bio set')}</Text>
           )}
         </View>
       </View>
