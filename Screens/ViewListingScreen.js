@@ -10,6 +10,7 @@ const ViewListingScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+      
     <ScrollView contentContainerStyle={styles.scrollContent}>
       {/* Product Image */}
       {item.image ? (
@@ -36,7 +37,7 @@ const ViewListingScreen = ({ route, navigation }) => {
       {/* Seller Profile */}
       <View style={styles.sectionGroup}>
         <View style={styles.divider} />
-        <TouchableOpacity style={styles.profileCard}>
+        <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Other User')}>
           <Image
             source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
             style={styles.profileImage}
