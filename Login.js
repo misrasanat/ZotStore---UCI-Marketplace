@@ -64,7 +64,9 @@ export default function Login({ navigation }) {
         );
         return;
       }
-      navigation.navigate('SignupProfile');
+      
+      // Email is verified, let AuthContext handle the routing based on profile completion
+      // No need to navigate manually - AuthContext will detect the user and route appropriately
       
     } catch (error) {
       console.error('Error logging in:', error);
