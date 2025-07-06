@@ -101,7 +101,7 @@ const HomeScreen = ({ navigation, route }) => {
                         <TouchableOpacity style={styles.navItem}>
                             <Text style={styles.navText}>📬</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navItem}>
+                        <TouchableOpacity style={styles.navItem}  onPress={() => navigation.navigate('MyListings')}>
                             <Text style={styles.navText}>📦</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>

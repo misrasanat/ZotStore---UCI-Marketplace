@@ -18,6 +18,10 @@ export default function Auth({ navigation }) {
     navigation.navigate('Login');
   };
 
+  const handleEmailSignup = () => {
+    navigation.navigate('Signup');
+  };
+
   return (
     <View style={styles.outerContainer}>
       <View style={styles.headerAccent} />
@@ -35,6 +39,9 @@ export default function Auth({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity style={styles.emailButton} onPress={handleEmailLogin}>
           <Text style={styles.emailButtonText}>Login with Email</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.signupButton} onPress={handleEmailSignup}>
+          <Text style={styles.signupButtonText}>Create New Account</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.footerAccent} />
@@ -129,9 +136,23 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
+    marginBottom: 18,
   },
   emailButtonText: {
     color: '#0064a4',
+    fontSize: 19,
+    fontWeight: 'bold',
+    letterSpacing: 1.1,
+  },
+  signupButton: {
+    width: '80%',
+    backgroundColor: '#ffb400',
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  signupButtonText: {
+    color: '#fff',
     fontSize: 19,
     fontWeight: 'bold',
     letterSpacing: 1.1,
