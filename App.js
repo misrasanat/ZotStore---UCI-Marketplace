@@ -15,6 +15,7 @@ import EditListingScreen from './Screens/EditListingScreen.js';
 import MyListingsScreen from './Screens/MyListingsScreen.js';
 import ChatScreen from './Screens/ChatScreen.js';
 import InboxScreen from './Screens/InboxScreen.js';
+import OtherUserProfileScreen from './Screens/OtherUserProfileScreen.js';
 
 
 
@@ -39,6 +40,7 @@ export default function App() {
         <Stack.Screen name="My Listings" component={MyListingsScreen} options={{headerShown: false}} />
         <Stack.Screen name="Inbox Screen" component={InboxScreen} options={{headerShown: false}} />
         <Stack.Screen name="Chat Screen" component={ChatScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Other User" component={OtherUserProfileScreen} options={{headerShown: false}} />
       </Stack.Navigator>
     </NavigationContainer>
   );
