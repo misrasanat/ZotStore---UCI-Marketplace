@@ -13,7 +13,6 @@ import Profile from './profile';
 import Signup2 from './SignupProfile';
 import ViewListingScreen from './Screens/ViewListingScreen.js';
 import EditListingScreen from './Screens/EditListingScreen.js';
-import MyListingsScreen from './Screens/mylistings';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,7 +30,6 @@ function Navigation() {
             <Stack.Screen name="Profile" component={Profile} />
             <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true }} />
             <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: true }} />
-            <Stack.Screen name="MyListings" component={MyListingsScreen}/>
             <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: true }} />
           </>
           ) : (
