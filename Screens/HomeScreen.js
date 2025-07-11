@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import styles from './HomeScreen.styles';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList, SafeAreaView} from 'react-native';
 import { db } from '../firebase';
@@ -101,7 +101,7 @@ const HomeScreen = ({ navigation, route }) => {
                         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
                             <Text style={styles.navText}>📬</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
+                        <TouchableOpacity style={styles.navItem}  onPress={() => navigation.navigate('My Listings')}>
                             <Text style={styles.navText}>📦</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>

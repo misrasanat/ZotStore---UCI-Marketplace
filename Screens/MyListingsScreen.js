@@ -1,34 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView, } from 'react-native';
-
-const mockListings = [
-  {
-    id: '1',
-    name: 'Graphing Calculator',
-    price: '65.00',
-    desc: 'TI-84 Plus CE in great condition. Used for Math 2A.',
-    image: 'https://i.imgur.com/z9fU4Zb.jpg',
-  },
-  {
-    id: '2',
-    name: 'Mini Fridge',
-    price: '45.00',
-    desc: 'Used for two quarters in the dorm. Very clean and quiet.',
-    image: 'https://i.imgur.com/yWk9iGJ.jpg',
-  },
-  {
-    id: '3',
-    name: 'Textbooks Bundle',
-    price: '30.00',
-    desc: 'Includes Econ 20A, Physics 3A, and Stats 7. Some highlights.',
-    image: 'https://i.imgur.com/HfJwNRF.jpg',
-  },
-];
+import { useEffect } from 'react';
+import { db } from '../firebase';
+import { getDoc, doc, collection, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 
 const MyListingsScreen = ({ navigation }) => {
-    const currentListings = [mockListings[0], mockListings[1]];
-    const pastListings = [mockListings[2]];
+    const [currentListings, setCurrentListings] = useState([]);
+    const [pastListings, setPastListings] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showCurrent, setShowCurrent] = useState(true);
     const [showPast, setShowPast] = useState(false);
     const [imageErrors, setImageErrors] = useState({});
@@ -37,8 +18,49 @@ const MyListingsScreen = ({ navigation }) => {
         { title: 'Past Listings', data: showPast ? pastListings : [], key: 'past' },
     ];
 
+    useEffect(() => {
+        const fetchUserListings = async () => {
+            setLoading(true);
+            try {
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            if (!user) return;
+
+            const userListingsSnapshot = await getDocs(collection(db, `users/${user.uid}/listings`));
+            const listings = [];
+
+            for (const docSnap of userListingsSnapshot.docs) {
+                const { listingId } = docSnap.data();
+                const listingDoc = await getDoc(doc(db, 'listings', listingId));
+                if (listingDoc.exists()) {
+                listings.push({
+                    id: listingDoc.id,
+                    ...listingDoc.data()
+                });
+                }
+            }
+
+            const currentListings = listings.filter(l => l.status === 'active');
+            const pastListings = listings.filter(l => l.status === 'past');
+            // For now, treat all listings as current
+            setCurrentListings(currentListings);
+            setPastListings(pastListings);
+            } catch (error) {
+            console.error("Failed to fetch user listings:", error);
+            } finally {
+            setLoading(false);
+            }
+
+            
+        };
+
+        fetchUserListings();
+    }, []);
+
     const renderItem = ({ item }) => {
         const hasError = imageErrors[item.id];
+        
 
         return (
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('View Listing', { item })}>
@@ -67,27 +89,36 @@ const MyListingsScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-        <FlatList
-            data={sections}
-            keyExtractor={(section) => section.key}
-            renderItem={({ item }) => (
-                <>
-                <TouchableOpacity onPress={() => {
-                    if (item.key === 'current') setShowCurrent(!showCurrent);
-                    if (item.key === 'past') setShowPast(!showPast);
-                }} style={styles.sectionToggle}>
-                    <Text style={styles.sectionTitle}>
-                    {item.title} {(item.key === 'current' ? showCurrent : showPast) ? '▲' : '▼'}
-                    </Text>
-                </TouchableOpacity>
-                {(item.key === 'current' ? showCurrent : showPast) &&
-                    item.data.map((listing) => renderItem({ item: listing }))
-                }
-                </>
-            )}
-            ListHeaderComponent={<Text style={styles.header}>My Listings</Text>}
-            contentContainerStyle={{ paddingBottom: 100 }}
-        />
+            
+        {loading ? (
+            <Text>Loading listings...</Text>
+            ) : (
+            <FlatList
+                data={sections}
+                keyExtractor={(section) => section.key}
+                renderItem={({ item }) => (
+                    <>
+                    <TouchableOpacity onPress={() => {
+                        if (item.key === 'current') setShowCurrent(!showCurrent);
+                        if (item.key === 'past') setShowPast(!showPast);
+                    }} style={styles.sectionToggle}>
+                        <Text style={styles.sectionTitle}>
+                        {item.title} {(item.key === 'current' ? showCurrent : showPast) ? '▲' : '▼'}
+                        </Text>
+                    </TouchableOpacity>
+                    {(item.key === 'current' ? showCurrent : showPast) &&
+                        item.data.map((listing) => (
+                            <View key={listing.id}>
+                                {renderItem({ item: listing })}
+                            </View>
+                        ))
+                    }
+                    </>
+                )}
+                ListHeaderComponent={<Text style={styles.header}>My Listings</Text>}
+                contentContainerStyle={{ paddingBottom: 100 }}
+            />
+        )}
 
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>

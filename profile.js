@@ -1,41 +1,141 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-
+import { auth, signOut } from './firebase';
+import { useAuth } from './AuthContext';
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { Picker } from '@react-native-picker/picker';
 
 export default function Profile({ navigation }) {
-  // Mock user data
   const [profilePic, setProfilePic] = useState(null);
-  const [name, setName] = useState('Peter Anteater');
-  const [email] = useState('panteater@uci.edu');
+  const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('Zot! Marketplace enthusiast.');
+  const [bio, setBio] = useState('');
+  const [major, setMajor] = useState('');
+  const [studentType, setStudentType] = useState('');
+  const [year, setYear] = useState('');
+  const [locationType, setLocationType] = useState('');
+  const [campusArea, setCampusArea] = useState('');
+  const [buildingName, setBuildingName] = useState('');
+  const [apartmentName, setApartmentName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
 
-  // Mock stats
+  const db = getFirestore();
+  const storage = getStorage();
+  const user = auth.currentUser;
+  const uid = user?.uid;
+  const userRef = doc(db, 'users', uid);
+
+  // Mock stats, TODO: Update with actual stats from database
   const listings = 5;
   const sold = 2;
   const bought = 3;
 
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!uid) return;
+      try {
+        const userDoc = await getDoc(userRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserData(userData);
+          setName(userData.name || '');
+          setPhone(userData.phone || '');
+          setBio(userData.bio || '');
+          setMajor(userData.major || '');
+          setStudentType(userData.studentType || '');
+          setYear(userData.year || '');
+          setLocationType(userData.locationType || '');
+          setCampusArea(userData.campusArea || '');
+          setBuildingName(userData.buildingName || '');
+          setApartmentName(userData.apartmentName || '');
+          if (userData.profilePic) {
+            setProfilePic(userData.profilePic);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        Alert.alert('Error', 'Failed to load profile data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUserData();
+  }, [uid]);
+
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setProfilePic(result.assets[0].uri);
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setProfilePic(result.assets[0].uri);
+      }
+    } 
+    catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert('Profile updated!');
+  const handleSave = async () => {
+    if (!uid) return;
+    try {
+      let profilePicUrl = null;
+      if (profilePic && !profilePic.startsWith('http')) {
+        // 🧹 Delete old image if one exists
+        if (userData?.profilePic?.includes('firebasestorage.googleapis.com')) {
+          const oldRef = ref(storage, `profilePics/${uid}`);
+          try {
+            await deleteObject(oldRef);
+          } catch (error) {
+            console.warn('No previous image found or could not delete:', error.message);
+          }
+        }
+
+        const response = await fetch(profilePic);
+        const blob = await response.blob();
+        const storageRef = ref(storage, `profilePics/${uid}`);
+        await uploadBytes(storageRef, blob);
+        profilePicUrl = await getDownloadURL(storageRef);
+      } else if (profilePic && profilePic.startsWith('http')) {
+        profilePicUrl = profilePic;
+      }
+
+      // Update Firestore with user data and profile picture URL
+      await setDoc(userRef, {
+        name: name,
+        phone: phone,
+        bio: bio,
+        major: major,
+        studentType: studentType,
+        year: year,
+        locationType: locationType,
+        campusArea: campusArea,
+        buildingName: buildingName,
+        apartmentName: apartmentName,
+        email: user.email,
+        uid: uid,
+        profilePic: profilePicUrl,
+        updatedAt: new Date(),
+      }, { merge: true });
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } 
+    catch (error) {
+      console.error('Error updating profile:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
   };
 
   const handleChangePassword = () => {
@@ -55,9 +155,14 @@ export default function Profile({ navigation }) {
     Alert.alert('Password changed!');
   };
 
-  const handleLogout = () => {
-    // TODO: Add real logout logic
-    Alert.alert('Logged out!');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   const handleAdditionalSettings = () => {
@@ -74,6 +179,7 @@ export default function Profile({ navigation }) {
           <Image
             source={profilePic ? { uri: profilePic } : require('./assets/icon.png')}
             style={styles.avatar}
+            defaultSource={require('./assets/icon.png')}
           />
           {isEditing && <Text style={styles.editPhotoText}>Edit Photo</Text>}
         </TouchableOpacity>
@@ -85,9 +191,9 @@ export default function Profile({ navigation }) {
             placeholder="Full Name"
           />
         ) : (
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{loading ? 'Loading...' : (name || 'No name set')}</Text>
         )}
-        <Text style={styles.email}>{email}</Text>
+        <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
       </View>
 
       {/* Account Info */}
@@ -104,7 +210,7 @@ export default function Profile({ navigation }) {
               keyboardType="phone-pad"
             />
           ) : (
-            <Text style={styles.infoValue}>{phone || 'Not set'}</Text>
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
           )}
         </View>
         <View style={styles.infoRow}>
@@ -118,9 +224,138 @@ export default function Profile({ navigation }) {
               multiline
             />
           ) : (
-            <Text style={styles.infoValue}>{bio}</Text>
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (bio)}</Text>
           )}
         </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Major:</Text>
+          {isEditing ? (
+            <TextInput
+              style={styles.infoInput}
+              value={major}
+              onChangeText={setMajor}
+              placeholder="Major"
+              autoCapitalize="words"
+            />
+          ) : (
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (major || 'Not set')}</Text>
+          )}
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Student Type:</Text>
+          {isEditing ? (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={studentType}
+                onValueChange={setStudentType}
+                style={styles.picker}
+              >
+                <Picker.Item label="Undergraduate" value="undergrad" />
+                <Picker.Item label="Graduate" value="grad" />
+              </Picker>
+            </View>
+          ) : (
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (studentType === 'undergrad' ? 'Undergraduate' : studentType === 'grad' ? 'Graduate' : 'Not set')}</Text>
+          )}
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Year:</Text>
+          {isEditing ? (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={year}
+                onValueChange={setYear}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Year" value="" />
+                <Picker.Item label="1st Year" value="1" />
+                <Picker.Item label="2nd Year" value="2" />
+                <Picker.Item label="3rd Year" value="3" />
+                <Picker.Item label="4th Year" value="4" />
+              </Picker>
+            </View>
+          ) : (
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}</Text>
+          )}
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Location Type:</Text>
+          {isEditing ? (
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={locationType}
+                onValueChange={setLocationType}
+                style={styles.picker}
+              >
+                <Picker.Item label="Select Location Type" value="" />
+                <Picker.Item label="On Campus" value="on-campus" />
+                <Picker.Item label="Off Campus" value="off-campus" />
+              </Picker>
+            </View>
+          ) : (
+            <Text style={styles.infoValue}>{loading ? 'Loading...' : (locationType === 'on-campus' ? 'On Campus' : locationType === 'off-campus' ? 'Off Campus' : 'Not set')}</Text>
+          )}
+        </View>
+
+        {/* On Campus Options */}
+        {isEditing && locationType === 'on-campus' && (
+          <>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Campus Area:</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={campusArea}
+                  onValueChange={setCampusArea}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select Area" value="" />
+                  <Picker.Item label="Middle Earth" value="middle-earth" />
+                  <Picker.Item label="Mesa Court" value="mesa-court" />
+                </Picker>
+              </View>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Building:</Text>
+              <TextInput
+                style={styles.infoInput}
+                value={buildingName}
+                onChangeText={setBuildingName}
+                placeholder="Building Name"
+                autoCapitalize="words"
+              />
+            </View>
+          </>
+        )}
+
+        {/* Off Campus Options */}
+        {isEditing && locationType === 'off-campus' && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Apartment:</Text>
+            <TextInput
+              style={styles.infoInput}
+              value={apartmentName}
+              onChangeText={setApartmentName}
+              placeholder="Apartment Name"
+              autoCapitalize="words"
+            />
+          </View>
+        )}
+
+        {/* Display Location Info when not editing */}
+        {!isEditing && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Location:</Text>
+            <Text style={styles.infoValue}>
+              {loading ? 'Loading...' : (
+                locationType === 'on-campus' 
+                  ? `On Campus - ${campusArea === 'middle-earth' ? 'Middle Earth' : campusArea === 'mesa-court' ? 'Mesa Court' : ''} - ${buildingName || ''}`
+                  : locationType === 'off-campus'
+                  ? `Off Campus - ${apartmentName || ''}`
+                  : 'Not set'
+              )}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Marketplace Stats */}
@@ -284,7 +519,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoLabel: {
-    width: 60,
+    width: 75,
     fontSize: 16,
     color: '#6c757d',
     fontWeight: '500',
@@ -302,6 +537,16 @@ const styles = StyleSheet.create({
     borderColor: '#dee2e6',
     marginLeft: 8,
     paddingVertical: 2,
+  },
+  pickerContainer: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  picker: {
+    width: '100%',
+    height: 55,
+    borderBottomWidth: 1,
+    borderColor: '#dee2e6',
   },
   statsRow: {
     flexDirection: 'row',
