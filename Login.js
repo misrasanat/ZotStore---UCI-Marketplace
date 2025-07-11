@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { auth } from './firebase';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { auth, signInWithEmailAndPassword, sendEmailVerification } from './firebase';
+import { reload } from 'firebase/auth';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const validateUCIEmail = (email) => {
     const uciEmailRegex = /^[a-zA-Z0-9._%+-]+@uci\.edu$/;
     return uciEmailRegex.test(email);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+      Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
 
@@ -27,17 +29,62 @@ export default function Login({ navigation }) {
       return;
     }
 
-    // TODO: Replace with real authentication logic
-    Alert.alert(
-      'Login Successful', 
-      'Welcome back!',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('Home')
-        }
-      ]
-    );
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log('User logged in:', user.uid);
+      // Reload user to get latest email verification status
+      await reload(user);
+      console.log('Email verification status:', user.emailVerified);
+      
+      
+      // Check if email is verified
+      if (!user.emailVerified) {
+        Alert.alert(
+          'Email Not Verified', 
+          'Please check your email and verify your account before logging in. If you have already verified your email, try logging in again.',
+          [
+            {
+              text: 'Resend Verification',
+              onPress: async () => {
+                try {
+                  await sendEmailVerification(user);
+                  Alert.alert('Verification Email Sent', 'Please check your inbox.');
+                } catch (error) {
+                  console.error('Error sending verification email:', error);
+                  Alert.alert('Error', 'Failed to send verification email. Please try again.');
+                }
+              }
+            },
+            {
+              text: 'OK',
+              style: 'cancel'
+            }
+          ]
+        );
+        return;
+      }
+      
+      // Email is verified, let AuthContext handle the routing based on profile completion
+      // No need to navigate manually - AuthContext will detect the user and route appropriately
+      
+    } catch (error) {
+      console.error('Error logging in:', error);
+      let errorMessage = 'Failed to log in. Please try again.';
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      }
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignup = () => {
@@ -47,7 +94,7 @@ export default function Login({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
-      <Text style={styles.subtitle}>Enter your credentials</Text>
+      <Text style={styles.subtitle}>Welcome back to ZotStore</Text>
       
       <TextInput
         style={styles.input}
@@ -56,6 +103,7 @@ export default function Login({ navigation }) {
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
+        editable={!loading}
       />
       
       <TextInput
@@ -65,16 +113,25 @@ export default function Login({ navigation }) {
         onChangeText={setPassword}
         secureTextEntry={true}
         autoCapitalize="none"
+        editable={!loading}
       />
       
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Login</Text>
+      <TouchableOpacity 
+        style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginButtonText}>Login</Text>
+        )}
       </TouchableOpacity>
       
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={handleSignup}>
-          <Text style={styles.signupLink}>Sign up</Text>
+        <TouchableOpacity onPress={handleSignup} disabled={loading}>
+          <Text style={styles.signupLink}>Sign Up</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -119,6 +176,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 8,
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#ccc',
   },
   loginButtonText: {
     color: '#fff',

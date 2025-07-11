@@ -1,36 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect }  from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, ScrollView} from 'react-native';
+import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 
-const user = {
-  name: 'Peter Anteater',
-  email: 'panteate@uci.edu',
-  bio: '3rd year CS major. I usually sell my dorm stuff and textbooks here.',
-  avatar: 'https://i.pravatar.cc/150?img=12',
-  joined: 'September 2023',
-};
+const OtherUserProfileScreen = ({ navigation, route }) => {
 
-const mockListings = [
-  {
-    id: '1',
-    name: 'Dorm Mini Fridge',
-    price: '50.00',
-    image: 'https://i.imgur.com/yWk9iGJ.jpg',
-  },
-  {
-    id: '2',
-    name: 'Textbooks Bundle',
-    price: '30.00',
-    image: 'https://i.imgur.com/HfJwNRF.jpg',
-  },
-  {
-    id: '3',
-    name: 'Desk Lamp',
-    price: '15.00',
-    image: 'https://i.imgur.com/z9fU4Zb.jpg',
-  },
-];
+  const { userId } = route.params;
+  const [user, setUser] = useState(null);
+  const [listings, setListings] = useState([]);
 
-const OtherUserProfileScreen = ({ navigation }) => {
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          setUser(userSnap.data());
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
+    };
+
+    const fetchUserListings = async () => {
+      try {
+        const q = query(collection(db, 'listings'), where('userId', '==', userId), where('status', '==', 'active'));
+        const querySnapshot = await getDocs(q);
+        const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setListings(items);
+      } catch (error) {
+        console.error('Error loading user listings:', error);
+      }
+    };
+
+    if (userId) {
+      fetchUserProfile();
+      fetchUserListings();
+    }
+  }, [userId]);
   const renderListing = ({ item }) => (
     <TouchableOpacity
       style={styles.listingCard}
@@ -52,23 +59,40 @@ const OtherUserProfileScreen = ({ navigation }) => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Info */}
     <View style={styles.profileSection}>
-        <Image source={{ uri: user.avatar }} style={styles.avatar} />
-        <Text style={styles.name}>{user.name}</Text>
-        <Text style={styles.email}>{user.email}</Text>
-        <Text style={styles.joined}>Joined {user.joined}</Text>
+        {user ? (
+        <>
+          <Image source={{ uri: user.profilePic || 'https://i.pravatar.cc/150?img=12' }} style={styles.avatar} />
+          <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.email}>{user.email}</Text>
+          <Text style={styles.joined}>Joined {new Date(user.createdAt?.seconds * 1000).toLocaleDateString()}</Text>
+        </>
+      ) : (
+        <Text>Loading...</Text>
+      )}
     </View>
 
-      {/* Bio */}
-      <View style={styles.bioBox}>
+    
+
+    {/* Bio */}
+    <View style={styles.bioBox}>
+      {user ? (
+      <>
         <Text style={styles.bioHeader}>About</Text>
-    <Text style={styles.bioText}>{user.bio}</Text>
+        <Text style={styles.bioText}>{user.bio || 'No bio provided.'}</Text>
+      </>
+    ) : (
+      <Text>Loading...</Text>
+    )}
+        
     </View>
+
+      
 
       {/* Action Buttons */}
       <View style={styles.actionRow}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('Chat', { user })}
+          onPress={() => navigation.navigate('Chat Screen', { userId })}
         >
           <Text style={styles.actionText}>📩 Message</Text>
         </TouchableOpacity>
@@ -86,16 +110,18 @@ const OtherUserProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.recentListingsSection}>
       {/* Listings Preview */}
       <Text style={styles.sectionHeader}>Recent Listings</Text>
       <FlatList
-        data={mockListings}
+        data={listings}
         keyExtractor={(item) => item.id}
         renderItem={renderListing}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 16, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingLeft: 16, paddingBottom: 4 }}
       />
+      </View>
 
     <View style={styles.reviewsSection}>
         <View style={styles.reviewsHeaderRow}>
@@ -125,7 +151,7 @@ const OtherUserProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1,
+  container: {  
   backgroundColor: '#fff',
   position: 'relative',
 },
@@ -239,6 +265,9 @@ bioText: {
     marginRight: 14,
     width: 140,
   },
+  recentListingsSection: {
+    paddingBottom: 0,
+  },
   listingImage: {
     width: '100%',
     height: 100,
@@ -258,7 +287,7 @@ bioText: {
   },
   reviewsSection: {
     paddingHorizontal: 14,
-    paddingTop: 16,
+    paddingTop: 10,
     paddingBottom: 40,
 },
 

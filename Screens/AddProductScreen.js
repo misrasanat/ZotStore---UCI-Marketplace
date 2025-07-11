@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'react-native-get-random-values';
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Image, ScrollView} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,6 +15,11 @@ const AddProductScreen = ({ navigation }) => {
   const [desc, setDesc] = useState('');
   const [image, setImage] = useState(null); // hook this to an image picker later
   const [inputHeight, setInputHeight] = useState(80);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+      navigation.setOptions({ headerShown: !isLoading });
+    }, [isLoading]);
 
 
 const handleSubmit = async () => {
@@ -32,6 +37,7 @@ const handleSubmit = async () => {
     const user = auth.currentUser;
     let imageUrl = '';
 
+    setIsLoading(true);
     try {
       if (image) {
         const response = await fetch(image);
@@ -41,13 +47,19 @@ const handleSubmit = async () => {
         imageUrl = await getDownloadURL(imageRef);
       }
 
-      await addDoc(collection(db, 'listings'), {
+      const docRef = await addDoc(collection(db, 'listings'), {
         name,
         price: parseFloat(price).toFixed(2),
         desc,
         image: imageUrl,
         email: user ? user.email : 'guest@zotstore.com',
-        timestamp: serverTimestamp()
+        userId: user ? user.uid : null,
+        timestamp: serverTimestamp(),
+        status: 'active',
+      });
+
+      await addDoc(collection(db, `users/${user.uid}/listings`), {
+        listingId: docRef.id,
       });
 
       alert("Listing added!");
@@ -136,6 +148,12 @@ const handleSubmit = async () => {
             <Text style={styles.navText}>👤</Text>
         </TouchableOpacity>
       </View>
+
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <Text style={styles.loadingText}>Updating...</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -176,6 +194,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: '40%', // room for nav bar and floating buttons
+  },
+  loadingOverlay: {
+  ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+
+  loadingText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
   },
   navBar: {
     flexDirection: 'row',

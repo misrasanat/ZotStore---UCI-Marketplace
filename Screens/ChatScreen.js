@@ -1,55 +1,132 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
-import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation} from 'react-native';
+import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation, Image} from 'react-native';
+import { db } from '../firebase';
+import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { useHeaderHeight } from '@react-navigation/elements';
+import { Keyboard } from 'react-native';
 
-const mockMessages = [
-  { id: '1', text: 'Hey! Is the fridge still available?', fromSelf: false },
-  { id: '2', text: 'Yep! Still available :)', fromSelf: true },
-  { id: '3', text: 'Awesome, I’m interested.', fromSelf: false },
-];
+
+
 
 const ChatScreen = ({route, navigation}) => {
-  const [messages, setMessages] = useState(mockMessages);
+  const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState('');
+  const [receiverInfo, setReceiverInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const flatListRef = useRef(null);
+  const headerHeight = useHeaderHeight();
+  const [bottomPadding, setBottomPadding] = useState(60);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!newMsg.trim()) return;
-    const newMessage = {
-      id: Date.now().toString(),
+
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    const receiverId = route.params.userId;
+    const chatId = [currentUser.uid, receiverId].sort().join('_');
+    
+    const messageRef = collection(db, 'chats', chatId, 'messages');
+    await addDoc(messageRef, {
       text: newMsg.trim(),
-      fromSelf: true,
-    };
-    setMessages([...messages, newMessage]);
+      senderUid: currentUser.uid,
+      timestamp: new Date()
+    });
+
+    await setDoc(doc(db, 'chats', chatId), {
+      participants: [currentUser.uid, receiverId],
+      lastMessage: {
+        text: newMsg.trim(),
+        timestamp: serverTimestamp()
+      }
+    }, { merge: true });
+
     setNewMsg('');
   };
 
+  useEffect(() => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    const receiverId = route.params.userId;
+    const chatId = [currentUser.uid, receiverId].sort().join('_');
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setBottomPadding(0));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setBottomPadding(30));
+
+    const messagesRef = collection(db, 'chats', chatId, 'messages');
+    const q = query(messagesRef, orderBy('timestamp'));
+
+    const fetchReceiver = async () => {
+      try {
+        const receiverRef = doc(db, 'users', receiverId);
+        const receiverSnap = await getDoc(receiverRef);
+        if (receiverSnap.exists()) {
+          setReceiverInfo(receiverSnap.data());
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching receiver info:', error);
+      }
+    };
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), fromSelf: doc.data().senderUid === currentUser.uid }));
+      setMessages(msgs);
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100); // gives React time to render
+    });
+
+    fetchReceiver();
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+      unsubscribe();
+    };
+  }, []);
+
   return (
+    <View style={[styles.container, { paddingBottom: bottomPadding }]}>
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={headerHeight}
     >
     <View style={styles.header}>
         <View style={styles.headerSide}>
-            <TouchableOpacity onPress={() => navigation.navigate('Inbox Screen')}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
                 <Text style={styles.backText}>←</Text>
             </TouchableOpacity>
         </View>
 
         <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle}>Peter Anteater</Text>
+          {receiverInfo?.profilePic && (
+              <Image
+                source={{ uri: receiverInfo.profilePic }}
+                style={{ width: 58, height: 38, borderRadius: 14, marginRight: 6 }}
+              />
+            )}
+            <Text style={styles.headerTitle}>{receiverInfo?.name || 'Loading...'}</Text>
         </View>
 
         <View style={styles.headerSide} />
     </View>
 
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <MessageBubble text={item.text} fromSelf={item.fromSelf} />
-        )}
-        contentContainerStyle={styles.messagesContainer}
-      />
+
+      {loading ? (
+        <Text style={{ padding: 16, fontStyle: 'italic' }}>Loading chat...</Text>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <MessageBubble text={item.text} fromSelf={item.fromSelf} />
+          )}
+          contentContainerStyle={styles.messagesContainer}
+        />
+      )}
+      
 
       <View style={styles.inputRow}>
         <TextInput
@@ -62,6 +139,7 @@ const ChatScreen = ({route, navigation}) => {
           <Text style={styles.sendText}>➤</Text>
         </TouchableOpacity>
       </View>
+      </KeyboardAvoidingView>
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
@@ -76,7 +154,8 @@ const ChatScreen = ({route, navigation}) => {
             <Text style={styles.navText}>👤</Text>
         </TouchableOpacity>
     </View>
-    </KeyboardAvoidingView>
+    
+    </View>
   );
 };
 
@@ -84,7 +163,6 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: '#fff',
-    paddingBottom: '15%',
 },
 backButton: {
   padding: 12,
@@ -119,6 +197,7 @@ headerTitle: {
   fontSize: 20,
   fontWeight: 'bold',
   paddingBottom: 5,
+  paddingTop: 9,
 },
   messagesContainer: {
     paddingHorizontal: 12,

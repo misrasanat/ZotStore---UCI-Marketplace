@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, getDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { formatRelative } from 'date-fns'
 import {
   View,
   Text,
@@ -8,35 +12,17 @@ import {
   StyleSheet,
 } from 'react-native';
 
-const mockConversations = [
-  {
-    id: '1',
-    user: 'Peter Anteater',
-    avatar: 'https://i.pravatar.cc/150?img=12',
-    lastMessage: 'Hey! Is that fridge still available?',
-    timestamp: '2h ago',
-  },
-  {
-    id: '2',
-    user: 'Amanda L.',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    lastMessage: 'Thanks for the textbook bundle!',
-    timestamp: '3d ago',
-  },
-  {
-    id: '3',
-    user: 'Ben O.',
-    avatar: 'https://i.pravatar.cc/150?img=9',
-    lastMessage: 'Can you meet near Aldrich Hall?',
-    timestamp: 'Just now',
-  },
-];
+
+
+
 
 const InboxScreen = ({ navigation }) => {
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('Chat Screen', { user: item.user })}
+      onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
     >
       <Image source={{ uri: item.avatar }} style={styles.avatar} />
       <View style={styles.info}>
@@ -49,15 +35,70 @@ const InboxScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  useEffect(() => {
+    const fetchChats = async () => {
+      
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      const chatsRef = collection(db, 'chats');
+      const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
+      const chatDocs = await getDocs(q);
+
+      const convoList = [];
+
+      setLoading(true);
+      try{
+        for (const docSnap of chatDocs.docs) {
+          const data = docSnap.data() || {};
+          const participants = Array.isArray(data.participants) ? data.participants : [];
+          let otherUserId = participants.find(uid => uid !== currentUser.uid);
+          if (!otherUserId && participants.length === 1 && participants[0] === currentUser.uid) {
+            otherUserId = currentUser.uid;
+          }
+          if (!otherUserId) continue; 
+          const userRef = doc(db, 'users', otherUserId);
+          const userSnap = await getDoc(userRef);
+
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            convoList.push({
+              id: docSnap.id,
+              user: userData.name || 'Unknown',
+              userId: otherUserId,
+              avatar: userData.profilePic || 'https://i.pravatar.cc/150?img=1',
+              lastMessage: data.lastMessage?.text || '',
+              timestamp: formatRelative(data.lastMessage?.timestamp?.toDate(), new Date()) || 'now'
+            });
+          }
+        }
+
+        setConversations(convoList);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChats();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Inbox</Text>
-      <FlatList
-        data={mockConversations}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      />
+      {loading ? (
+        <Text style={{ padding: 16 }}>Loading conversations...</Text>
+      ) : conversations.length === 0 ? (
+        <Text style={{ padding: 16, fontStyle: 'italic' }}>No conversations yet.</Text>
+      ) : (
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        />
+      )}
 
     <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
