@@ -457,6 +457,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
   },
+
   headerSection: {
     alignItems: 'center',
     marginBottom: 32,
@@ -642,13 +643,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         height: 60,
-        backgroundColor: '#fdfff5',
+        backgroundColor: '#0C2340',
         borderTopWidth: 1,
-        borderTopColor: '#ddd',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        borderTopColor: '#10253dff',
         elevation: 10, // Android shadow
         shadowColor: '#000', // iOS shadow
         shadowOffset: { width: 0, height: -1 },

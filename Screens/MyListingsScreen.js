@@ -89,6 +89,7 @@ const MyListingsScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+        <View style={styles.container2}>
             
         {loading ? (
             <Text>Loading listings...</Text>
@@ -119,7 +120,7 @@ const MyListingsScreen = ({ navigation }) => {
                 contentContainerStyle={{ paddingBottom: 100 }}
             />
         )}
-
+        </View>
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
@@ -140,8 +141,9 @@ const MyListingsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 40 },
-  header: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
+  container: { flex: 1, backgroundColor: '#fff'},
+  container2: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 40 },
+  header: { fontSize: 24, fontWeight: '700', marginBottom: 16, },
   card: {
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
@@ -180,13 +182,9 @@ placeholderText: {
     justifyContent: 'space-around',
     alignItems: 'center',
     height: 60,
-    backgroundColor: '#fdfff5',
+    backgroundColor: '#0C2340',
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderTopColor: '#1f2b3aff',
     elevation: 10, // Android shadow
     shadowColor: '#000', // iOS shadow
     shadowOffset: { width: 0, height: -1 },
