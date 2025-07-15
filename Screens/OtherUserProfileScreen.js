@@ -175,6 +175,7 @@ backIcon: {
   color: '#194a7a',
   fontSize: 40,
   fontWeight: 'bold',
+  paddingTop: 15,
 },
 bioBox: {
   marginTop: 24,

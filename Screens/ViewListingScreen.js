@@ -59,6 +59,7 @@ const ViewListingScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
+    <View style={styles.container2}>
       
     <ScrollView contentContainerStyle={styles.scrollContent}>
       {/* Product Image */}
@@ -84,7 +85,7 @@ const ViewListingScreen = ({ route, navigation }) => {
         {currentUser?.uid === item.userId && item.status === 'active' && (
           <>
           <TouchableOpacity onPress={() => handleArchive()}>
-            <Text style={styles.deleteText}>🗑 Archive</Text>
+            <Text style={styles.deleteText}>🗑</Text>
           </TouchableOpacity>
           </>
         )}
@@ -94,7 +95,6 @@ const ViewListingScreen = ({ route, navigation }) => {
 
       {/* Seller Profile */}
       <View style={styles.sectionGroup}>
-        <View style={styles.divider} />
         <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Other User', { userId: item.userId })}>
           <Image
             source={{
@@ -117,7 +117,6 @@ const ViewListingScreen = ({ route, navigation }) => {
             )}
           </View>
         </TouchableOpacity>
-        <View style={styles.divider} />
       </View>
 
       {/* Location */}
@@ -126,6 +125,8 @@ const ViewListingScreen = ({ route, navigation }) => {
         <Text style={styles.locationText}>Middle Earth — Balin</Text>
       </View>
     </ScrollView>
+    </View>
+    
       {/* Floating Buttons */}
       <TouchableOpacity
         style={styles.messageButton}
@@ -143,6 +144,7 @@ const ViewListingScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </>
       )}
+      
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
@@ -164,6 +166,10 @@ const ViewListingScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container2: {
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -249,11 +255,12 @@ const styles = StyleSheet.create({
   },
 
   deleteText: {
-    color: '#c00',
+    color: '#FFC72C',
     fontWeight: '600',
-    fontSize: 18,
+    fontSize: 28,
     padding: 4,
     paddingBottom: 8
+    
   },
   desc: {
     fontSize: 16,
@@ -271,7 +278,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 70,
     right: 20,
-    backgroundColor: '#0064a4',
+    backgroundColor: '#0C2340',
     padding: 16,
     borderRadius: 50,
     elevation: 4,
@@ -280,7 +287,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 70,
     left: 20,
-    backgroundColor: '#0064a4',
+    backgroundColor: '#0C2340',
     padding: 16,
     borderRadius: 50,
     elevation: 4,
@@ -293,8 +300,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 0,
-    backgroundColor: '#f4f6f9',
+    
     padding: 12,
+    paddingBottom: 15,
     borderRadius: 10,
   },
   profileImage: {
@@ -341,13 +349,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     height: 60,
-    backgroundColor: '#fdfff5',
+    backgroundColor: '#0C2340',
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderTopColor: '#1f2b3aff',
     elevation: 10, // Android shadow
     shadowColor: '#000', // iOS shadow
     shadowOffset: { width: 0, height: -1 },

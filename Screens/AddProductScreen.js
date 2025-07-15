@@ -72,6 +72,7 @@ const handleSubmit = async () => {
 
   return (
     <View style={styles.container}>
+    <View style={styles.container2}>
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.header}>Add Listing</Text>
 
@@ -134,6 +135,7 @@ const handleSubmit = async () => {
 
       <Button title="Submit" onPress={handleSubmit} disabled={!name.trim() || !price.trim() || !desc.trim()}/>
     </ScrollView>
+    </View>
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
@@ -160,6 +162,11 @@ const handleSubmit = async () => {
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: 0,
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container2: {
     padding: 16,
     flex: 1,
     backgroundColor: '#fff',
@@ -213,13 +220,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     height: 60,
-    backgroundColor: '#fdfff5',
+    backgroundColor: '#0C2340',
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderTopColor: '#1f2b3aff',
     elevation: 10, // Android shadow
     shadowColor: '#000', // iOS shadow
     shadowOffset: { width: 0, height: -1 },

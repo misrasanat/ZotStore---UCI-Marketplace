@@ -17,13 +17,14 @@ import MyListingsScreen from './Screens/MyListingsScreen.js';
 import ChatScreen from './Screens/ChatScreen.js';
 import InboxScreen from './Screens/InboxScreen.js';
 import OtherUserProfileScreen from './Screens/OtherUserProfileScreen.js';
-
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
   const { user, userProfile } = useAuth();
 
   return (
+    <SafeAreaProvider>
     <NavigationContainer>
       <Stack.Navigator 
         initialRouteName={user && userProfile ? "Home" : "Auth"} 
@@ -52,6 +53,7 @@ function Navigation() {
         )}
       </Stack.Navigator>
     </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
 

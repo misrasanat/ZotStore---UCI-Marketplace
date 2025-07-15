@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation, Image} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebase';
 import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
@@ -86,12 +87,13 @@ const ChatScreen = ({route, navigation}) => {
   }, []);
 
   return (
-    <View style={[styles.container, { paddingBottom: bottomPadding }]}>
+    <View style={[styles.container]}>
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={headerHeight}
     >
+    <SafeAreaView edges={['top']} style={styles.safeContainer}>
     <View style={styles.header}>
         <View style={styles.headerSide}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -103,7 +105,7 @@ const ChatScreen = ({route, navigation}) => {
           {receiverInfo?.profilePic && (
               <Image
                 source={{ uri: receiverInfo.profilePic }}
-                style={{ width: 58, height: 38, borderRadius: 14, marginRight: 6 }}
+                style={{ width: 68, height: 58, borderRadius: 30, marginRight: 0 }}
               />
             )}
             <Text style={styles.headerTitle}>{receiverInfo?.name || 'Loading...'}</Text>
@@ -111,6 +113,7 @@ const ChatScreen = ({route, navigation}) => {
 
         <View style={styles.headerSide} />
     </View>
+    </SafeAreaView>
 
 
       {loading ? (
@@ -164,6 +167,9 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: '#fff',
 },
+safeContainer: {
+  backgroundColor: '#194a7a',
+},
 backButton: {
   padding: 12,
   marginRight: 8,
@@ -179,7 +185,7 @@ backText: {
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     backgroundColor: '#194a7a',
-    paddingVertical: 16,
+    paddingBottom: 10,
     paddingHorizontal: 16
   },
 headerSide: {
@@ -190,6 +196,7 @@ headerSide: {
 headerCenter: {
   flex: 1,
   alignItems: 'center',
+  
 },
 
 headerTitle: {
@@ -246,33 +253,29 @@ headerTitle: {
     fontSize: 16,
   },
   navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    backgroundColor: '#fdfff5',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navText: {
-    fontSize: 26,
-    color: '#444',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        height: 60,
+        backgroundColor: '#0C2340',
+        borderTopWidth: 1,
+        borderTopColor: '#1f2b3aff',
+        elevation: 10, // Android shadow
+        shadowColor: '#000', // iOS shadow
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    navItem: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    navText: {
+        fontSize: 26,
+        color: '#444',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
 });
 
 export default ChatScreen;
