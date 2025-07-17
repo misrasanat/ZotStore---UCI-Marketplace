@@ -7,6 +7,8 @@ import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { serverTimestamp } from 'firebase/firestore';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomNavBar from './CustomNavbar.js';
 
 const EditListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
@@ -86,6 +88,7 @@ const EditListingScreen = ({ route, navigation }) => {
   return (
     <View style={styles.wrapper}>
     <View style={styles.container}>
+    <View style={styles.container2}>
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.header}>Edit Listing</Text>
 
@@ -146,20 +149,10 @@ const EditListingScreen = ({ route, navigation }) => {
 
       
     </ScrollView>
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navText}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-            <Text style={styles.navText}>📦</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.navText}>👤</Text>
-        </TouchableOpacity>
-      </View>
+    </View>
+    <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+      <CustomNavBar />
+      </SafeAreaView>
       
     </View>
     {isLoading && (
@@ -173,8 +166,12 @@ const EditListingScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 16, flex: 1, backgroundColor: '#fff' },
+  container: {flex: 1, backgroundColor: '#fff' },
+  container2: { padding: 16, flex: 1, backgroundColor: '#fff' },
   header: { fontSize: 22, fontWeight: '600', marginBottom: 16 },
+  safeContainer2: {
+      backgroundColor: '#0C2340',
+  },
   input: {
     height: 40,
     borderColor: '#aaa',
@@ -215,23 +212,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    backgroundColor: '#fdfff5',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        height: 50,
+        backgroundColor: '#0C2340',
+        borderTopWidth: 1,
+        borderTopColor: '#10253dff',
+        
+    },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',

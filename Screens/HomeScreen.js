@@ -3,7 +3,9 @@ import styles from './HomeScreen.styles';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import CustomNavBar from './CustomNavbar.js';
+
 
 
 const HomeScreen = ({ navigation, route }) => {
@@ -14,7 +16,10 @@ const HomeScreen = ({ navigation, route }) => {
     );
 
     React.useEffect(() => {
-        const q = query(collection(db, 'listings'), orderBy('timestamp', 'desc'));
+        const q = query(
+            collection(db, 'listings'),
+            where('status', '==', 'active'), 
+            orderBy('timestamp', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetched = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -28,7 +33,7 @@ const HomeScreen = ({ navigation, route }) => {
     return (
         
         <View style={styles.container}>
-            <SafeAreaView style={styles.safeContainer}>
+            <SafeAreaView edges={['top']} style={styles.safeContainer}>
             <View style={styles.topSection}>
                 {/* Search Bar */}
                 <TextInput
@@ -102,20 +107,9 @@ const HomeScreen = ({ navigation, route }) => {
                         />
                         )}
                     </View>
-                        <View style={styles.navBar}>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-                                <Text style={styles.navText}>🏠</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-                                <Text style={styles.navText}>📬</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-                                <Text style={styles.navText}>📦</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-                                <Text style={styles.navText}>👤</Text>
-                            </TouchableOpacity>
-                        </View>
+                    <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+                        <CustomNavBar />
+                    </SafeAreaView>
                     </View>
             
             </View>

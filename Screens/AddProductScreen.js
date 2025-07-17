@@ -8,6 +8,8 @@ import { db } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { v4 as uuidv4 } from 'uuid';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomNavBar from './CustomNavbar.js';
 
 const AddProductScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -136,20 +138,9 @@ const handleSubmit = async () => {
       <Button title="Submit" onPress={handleSubmit} disabled={!name.trim() || !price.trim() || !desc.trim()}/>
     </ScrollView>
     </View>
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navText}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-            <Text style={styles.navText}>📦</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.navText}>👤</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+      <CustomNavBar />
+    </SafeAreaView>
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
@@ -170,6 +161,9 @@ const styles = StyleSheet.create({
     padding: 16,
     flex: 1,
     backgroundColor: '#fff',
+  },
+  safeContainer2: {
+      backgroundColor: '#0C2340',
   },
   header: {
     fontSize: 22,
@@ -216,18 +210,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    backgroundColor: '#0C2340',
-    borderTopWidth: 1,
-    borderTopColor: '#1f2b3aff',
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        height: 50,
+        backgroundColor: '#0C2340',
+        borderTopWidth: 1,
+        borderTopColor: '#10253dff',
+        
     },
     navItem: {
       alignItems: 'center',

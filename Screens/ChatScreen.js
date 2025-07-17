@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation, Image} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebase';
 import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Keyboard } from 'react-native';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomNavBar from './CustomNavbar.js';
 
 
 
@@ -143,20 +143,9 @@ const ChatScreen = ({route, navigation}) => {
         </TouchableOpacity>
       </View>
       </KeyboardAvoidingView>
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navText}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-            <Text style={styles.navText}>📦</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.navText}>👤</Text>
-        </TouchableOpacity>
-    </View>
+      <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+        <CustomNavBar />
+      </SafeAreaView>
     
     </View>
   );
@@ -170,6 +159,9 @@ const styles = StyleSheet.create({
 safeContainer: {
   backgroundColor: '#194a7a',
 },
+safeContainer2: {
+      backgroundColor: '#0C2340',
+  },
 backButton: {
   padding: 12,
   marginRight: 8,
@@ -256,15 +248,11 @@ headerTitle: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        height: 60,
+        height: 50,
         backgroundColor: '#0C2340',
         borderTopWidth: 1,
-        borderTopColor: '#1f2b3aff',
-        elevation: 10, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: { width: 0, height: -1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        borderTopColor: '#10253dff',
+        
     },
     navItem: {
         alignItems: 'center',

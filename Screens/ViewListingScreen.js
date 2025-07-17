@@ -5,7 +5,9 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getAuth } from 'firebase/auth';
 import { useState, useEffect } from 'react';
-import { getDoc } from 'firebase/firestore';
+import { getDoc } from 'firebase/firestore'
+import { SafeAreaView } from 'react-native-safe-area-context';;
+import CustomNavBar from './CustomNavbar.js';
 
 
 
@@ -127,38 +129,27 @@ const ViewListingScreen = ({ route, navigation }) => {
     </ScrollView>
     </View>
     
-      {/* Floating Buttons */}
-      <TouchableOpacity
-        style={styles.messageButton}
-        onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
-      >
-        <Text style={styles.buttonText}>💬</Text>
-      </TouchableOpacity>
-      {currentUser?.uid === item.userId && (
-        <>
+      <View style={styles.floatingActionRow}>
+        <TouchableOpacity
+          style={styles.messageButton}
+          onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
+        >
+          <Text style={styles.buttonText}>💬</Text>
+        </TouchableOpacity>
+
+        {currentUser?.uid === item.userId && (
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => navigation.navigate('Edit Listing', { item })}
           >
             <Text style={styles.buttonText}>✏️</Text>
           </TouchableOpacity>
-        </>
-      )}
-      
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navText}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-            <Text style={styles.navText}>📦</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.navText}>👤</Text>
-        </TouchableOpacity>
+        )}
       </View>
+      
+      <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+          <CustomNavBar />
+      </SafeAreaView>
     </View>
     
   );
@@ -168,6 +159,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  safeContainer2: {
+      backgroundColor: '#0C2340',
   },
   container2: {
     flex: 1,
@@ -274,19 +268,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: '40%', // room for nav bar and floating buttons
   },
+  floatingActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginBottom: 10, // 👈 space above nav bar
+    marginTop: -70,
+    zIndex: 1, 
+  },
+
   messageButton: {
-    position: 'absolute',
-    bottom: 70,
-    right: 20,
     backgroundColor: '#0C2340',
     padding: 16,
     borderRadius: 50,
     elevation: 4,
   },
+
   editButton: {
-    position: 'absolute',
-    bottom: 70,
-    left: 20,
     backgroundColor: '#0C2340',
     padding: 16,
     borderRadius: 50,
@@ -348,16 +346,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    height: 60,
+    height: 50,
     backgroundColor: '#0C2340',
     borderTopWidth: 1,
-    borderTopColor: '#1f2b3aff',
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+    borderTopColor: '#10253dff',
+        
+    },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',

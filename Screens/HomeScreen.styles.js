@@ -4,6 +4,9 @@ const styles = StyleSheet.create({
     safeContainer: {
         backgroundColor: '#fff',
     },
+    safeContainer2: {
+        backgroundColor: '#0C2340',
+    },
     container: {
         flex: 1,
         backgroundColor: '#fff',
@@ -44,8 +47,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         marginBottom: 12,
 
-        borderColor: '#e4dba4',
+        borderColor: '#0C2340',
         borderWidth: 1,
+
+        fontSize: 16,                  // 👈 increase font size for readability
+        fontFamily: 'Inter-Medium',   // 👈 use a clean, popular font
+        color: '#222',
+        
 
         // iOS shadow
         shadowColor: '#000',
@@ -67,7 +75,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         paddingHorizontal: '15%',
-        opacity: 0.8,
         
     },
     listingsHeader: {
@@ -169,15 +176,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        height: 60,
+        height: 50,
         backgroundColor: '#0C2340',
         borderTopWidth: 1,
         borderTopColor: '#10253dff',
-        elevation: 10, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: { width: 0, height: -1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
         
     },
     navItem: {
