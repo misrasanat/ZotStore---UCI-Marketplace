@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { db } from '../firebase';
 import { getDoc, doc, collection, getDocs } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomNavBar from './CustomNavbar.js';
 
 
 const MyListingsScreen = ({ navigation }) => {
@@ -121,21 +123,9 @@ const MyListingsScreen = ({ navigation }) => {
             />
         )}
         </View>
-      <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navText}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-            <Text style={styles.navText}>📦</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.navText}>👤</Text>
-        </TouchableOpacity>
-    </View>
-
+    <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+      <CustomNavBar />
+    </SafeAreaView>
     </View>
   );
 };
@@ -144,6 +134,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff'},
   container2: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16, paddingTop: 40 },
   header: { fontSize: 24, fontWeight: '700', marginBottom: 16, },
+  safeContainer2: {
+      backgroundColor: '#0C2340',
+  },
   card: {
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
@@ -178,18 +171,14 @@ placeholderText: {
     paddingBottom: '40%', // room for nav bar and floating buttons
   },
   navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
-    backgroundColor: '#0C2340',
-    borderTopWidth: 1,
-    borderTopColor: '#1f2b3aff',
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        height: 50,
+        backgroundColor: '#0C2340',
+        borderTopWidth: 1,
+        borderTopColor: '#10253dff',
+        
     },
     navItem: {
         alignItems: 'center',
