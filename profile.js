@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { auth, signOut } from './firebase';
 import { useAuth } from './AuthContext';
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Picker } from '@react-native-picker/picker';
 
 export default function Profile({ navigation }) {
@@ -87,12 +87,38 @@ export default function Profile({ navigation }) {
       Alert.alert('Error', 'Failed to pick image. Please try again.');
     }
   };
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled) {
+        setProfilePic(result.assets[0].uri);
+      }
+    } 
+    catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image. Please try again.');
+    }
+  };
 
   const handleSave = async () => {
     if (!uid) return;
     try {
       let profilePicUrl = null;
       if (profilePic && !profilePic.startsWith('http')) {
+        // 🧹 Delete old image if one exists
+        if (userData?.profilePic?.includes('firebasestorage.googleapis.com')) {
+          const oldRef = ref(storage, `profilePics/${uid}`);
+          try {
+            await deleteObject(oldRef);
+          } catch (error) {
+            console.warn('No previous image found or could not delete:', error.message);
+          }
+        }
+
         const response = await fetch(profilePic);
         const blob = await response.blob();
         const storageRef = ref(storage, `profilePics/${uid}`);
@@ -426,10 +452,10 @@ export default function Profile({ navigation }) {
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
               <Text style={styles.navText}>🏠</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
               <Text style={styles.navText}>📬</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
               <Text style={styles.navText}>📦</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
@@ -447,6 +473,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
   },
+
   headerSection: {
     alignItems: 'center',
     marginBottom: 32,
@@ -632,13 +659,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         height: 60,
-        backgroundColor: '#fdfff5',
+        backgroundColor: '#0C2340',
         borderTopWidth: 1,
-        borderTopColor: '#ddd',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        borderTopColor: '#10253dff',
         elevation: 10, // Android shadow
         shadowColor: '#000', // iOS shadow
         shadowOffset: { width: 0, height: -1 },

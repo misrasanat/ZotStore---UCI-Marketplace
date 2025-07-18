@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Image, ScrollView} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -15,7 +16,11 @@ const EditListingScreen = ({ route, navigation }) => {
   const [image, setImage] = useState(item.image || null);
   const [newImageSelected, setNewImageSelected] = useState(false);
   const [inputHeight, setInputHeight] = useState(80);
-  
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    navigation.setOptions({ headerShown: !isLoading });
+  }, [isLoading]);
 
   const handleUpdate = async () => {
     if (!name.trim() || !price.trim() || !desc.trim()) {
@@ -26,6 +31,27 @@ const EditListingScreen = ({ route, navigation }) => {
       alert('Price must be a valid number.');
       return;
     }
+
+    const getImagePathFromUrl = (url) => {
+      const match = decodeURIComponent(url)
+        .match(/\/o\/(.*?)\?/); // captures the path after "/o/" and before "?"
+      return match ? match[1] : null;
+    };
+
+
+    if (newImageSelected && image && item.image) {
+      try {
+        const oldPath = getImagePathFromUrl(item.image);
+        if (oldPath) {
+          const oldRef = ref(storage, oldPath);
+          await deleteObject(oldRef);
+          console.log('Old image deleted');
+        }
+      } catch (err) {
+        console.warn('Failed to delete old image:', err);
+      }
+    }
+    setIsLoading(true);
 
     try {
       let imageUrl = item.image;
@@ -52,10 +78,13 @@ const EditListingScreen = ({ route, navigation }) => {
     } catch (error) {
       console.error('Error updating listing: ', error);
       alert('Something went wrong while updating your listing.');
+    } finally {
+      setIsLoading(false); // hide overlay regardless
     }
   };
 
   return (
+    <View style={styles.wrapper}>
     <View style={styles.container}>
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.header}>Edit Listing</Text>
@@ -114,22 +143,32 @@ const EditListingScreen = ({ route, navigation }) => {
       )}
 
       <Button title="Update" onPress={handleUpdate} />
+
+      
     </ScrollView>
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
             <Text style={styles.navText}>📬</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
             <Text style={styles.navText}>📦</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
             <Text style={styles.navText}>👤</Text>
         </TouchableOpacity>
       </View>
+      
     </View>
+    {isLoading && (
+      <View style={styles.loadingOverlay}>
+        <Text style={styles.loadingText}>Updating...</Text>
+      </View>
+    )}
+    </View>
+
   );
 };
 
@@ -162,6 +201,19 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: '40%', // room for nav bar and floating buttons
   },
+  loadingOverlay: {
+  ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+
+  loadingText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
+  },
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -189,6 +241,10 @@ const styles = StyleSheet.create({
     color: '#444',
     fontWeight: '600',
     textAlign: 'center',
+  },
+  wrapper: {
+    flex: 1,
+    position: 'relative',
   },
 });
 

@@ -1,11 +1,10 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import styles from './HomeScreen.styles';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList, SafeAreaView} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 
-
-let curr_items = [];
 
 const HomeScreen = ({ navigation, route }) => {
     const [items, setItems] = React.useState([]);
@@ -27,8 +26,9 @@ const HomeScreen = ({ navigation, route }) => {
         return () => unsubscribe();
     }, []);
     return (
-        <SafeAreaView style={styles.safeContainer}>
+        
         <View style={styles.container}>
+            <SafeAreaView style={styles.safeContainer}>
             <View style={styles.topSection}>
                 {/* Search Bar */}
                 <TextInput
@@ -39,79 +39,87 @@ const HomeScreen = ({ navigation, route }) => {
                     onChangeText={text => setSearchQuery(text)}
                 />
 
-                {/* Sell Button */}
-                <TouchableOpacity style={styles.sellButton} onPress={() => navigation.navigate('AddProduct')}>
-                    <Text style={styles.sellButtonText}>Sell Item</Text>
-                </TouchableOpacity>
+                <View style={styles.listingsRow}>
+                    <Text style={styles.listingsHeader}>Listings:</Text>
 
-                {/* Listings Header */}
-                <Text style={styles.listingHeader}>Listings:</Text>
-            </View>
-
-            
-            <View style={styles.container2}>
-
-                {/* Item Listings */}
-                {items.length === 0 ? (
-                    <Text style={styles.noListings}>No current Listings</Text>
-                ) : (
-                    <FlatList
-                        data={filteredItems}
-                        numColumns={2}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={styles.listingsContainer}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                style={styles.card}
-                                onPress={() => {
-                                    navigation.navigate('View Listing', { item });
-                                    // navigation.navigate('ItemDetail', { item }); // optional: hook to details screen
-                                }}
-                                activeOpacity={0.85}
-                            >
-                                {/* Top fixed section */}
-                                <View style={styles.cardTop}>
-                                {/*<Text style={styles.seller}>Seller</Text>*/}
-
-                                {item.image ? (<Image
-                                    source={{ uri: item.image }}
-                                    style={styles.cardImage}
-                                    resizeMode="cover"
-                                    />
-                                ) : (
-                                    <View style={styles.imagePlaceholder}>
-                                        <Text style={styles.placeholderText}>N/A</Text>
-                                    </View>
-                                        
-                                )}
-                                </View>
-
-                                {/* Bottom flexible section */}
-                                <Text style={styles.name}>{item.name}</Text>
-                                <Text style={styles.price}>${item.price}</Text>
-                            </TouchableOpacity> 
-                            )}
-                    />
-                    )}
+                    <TouchableOpacity style={styles.sellButton} onPress={() => navigation.navigate('AddProduct')}>
+                        <Text style={styles.sellButtonText}>Sell Item</Text>
+                    </TouchableOpacity>
                 </View>
-                    <View style={styles.navBar}>
-                        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-                            <Text style={styles.navText}>🏠</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.navItem}>
-                            <Text style={styles.navText}>📬</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.navItem}  onPress={() => navigation.navigate('MyListings')}>
-                            <Text style={styles.navText}>📦</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-                            <Text style={styles.navText}>👤</Text>
-                        </TouchableOpacity>
+            </View>
+            <View style={styles.divider} />
+            </SafeAreaView>
+            
+            
+
+                <View style={{ flex: 1}}>
+                <View style={styles.container2}>
+
+                    {/* Item Listings */}
+                    {items.length === 0 ? (
+                        <Text style={styles.noListings}>No current Listings</Text>
+                    ) : (
+                        <FlatList
+                            data={filteredItems}
+                            numColumns={2}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={{
+                                paddingBottom: 60,           // gives space for nav bar
+                                flexGrow: 1,                 // stretches vertically
+                                justifyContent: 'flex-start' // prevents centering when few items
+                            }}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.card}
+                                    onPress={() => {
+                                        navigation.navigate('View Listing', { item });
+                                        // navigation.navigate('ItemDetail', { item }); // optional: hook to details screen
+                                    }}
+                                    activeOpacity={0.85}
+                                >
+                                    {/* Top fixed section */}
+                                    <View style={styles.cardTop}>
+                                    {/*<Text style={styles.seller}>Seller</Text>*/}
+
+                                    {item.image ? (<Image
+                                        source={{ uri: item.image }}
+                                        style={styles.cardImage}
+                                        resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <View style={styles.imagePlaceholder}>
+                                            <Text style={styles.placeholderText}>N/A</Text>
+                                        </View>
+                                            
+                                    )}
+                                    </View>
+
+                                    {/* Bottom flexible section */}
+                                    <Text style={styles.name}>{item.name}</Text>
+                                    <Text style={styles.price}>${item.price}</Text>
+                                </TouchableOpacity> 
+                                )}
+                        />
+                        )}
                     </View>
-                
-        </View>
-        </SafeAreaView>
-        
+                        <View style={styles.navBar}>
+                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+                                <Text style={styles.navText}>🏠</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
+                                <Text style={styles.navText}>📬</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
+                                <Text style={styles.navText}>📦</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
+                                <Text style={styles.navText}>👤</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+            
+            </View>
+            
 
 
         

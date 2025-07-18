@@ -2,7 +2,6 @@ import {StyleSheet} from 'react-native';
 
 const styles = StyleSheet.create({
     safeContainer: {
-        flex: 1,
         backgroundColor: '#fff',
     },
     container: {
@@ -10,7 +9,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     container2: {
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingBottom: 0,
+        paddingTop: 0,
+        flex: 1,
     },
     fullScreen: {
         flex: 1,
@@ -24,15 +26,16 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     topSection: {
-        backgroundColor: '#fffff0', // soft gold vibe — tweak if you want it richer
-        padding: 16,
-        borderBottomLeftRadius: 12,
-        borderBottomRightRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 4,
-        elevation: 3,
+        backgroundColor: '#fff', // soft gold vibe — tweak if you want it richer
+        paddingHorizontal: 16,
+        paddingTop: 3,
+        paddingBottom: 0,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#bbb', // Slightly bolder for contrast
+        width: '100%',
+        alignSelf: 'center',
     },
     searchBar: {
         height: 44,
@@ -40,7 +43,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         paddingHorizontal: 16,
         marginBottom: 12,
-        marginTop: 9,
 
         borderColor: '#e4dba4',
         borderWidth: 1,
@@ -55,27 +57,37 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     sellButton: {
-        backgroundColor: '#194a7a',
+        backgroundColor: '#0C2340',
         paddingVertical: 10,
         borderRadius: 8,
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 12,
     },
     sellButtonText: {
         color: '#fff',
         fontWeight: 'bold',
+        paddingHorizontal: '15%',
+        opacity: 0.8,
+        
     },
     listingsHeader: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '600',
         marginBottom: 12,
-        color: '#444',              // deeper gray, softer contrast
+        color: '#0C2340',              // deeper gray, softer contrast
         letterSpacing: 0.3,         // gives a tighter, confident look
         textTransform: 'uppercase', // optional: gives it a label-like vibe
-        opacity: 0.85,
+    },
+    listingsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16, // match your usual spacing
+        paddingTop: 4,
+        marginBottom: 12,
     },
     listingsContainer: {
-        paddingBottom: '60%',
+        paddingBottom: '10%',
         flexGrow: 1,
     },
     card: {
@@ -85,7 +97,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 8,
         paddingBottom: 14,
-        paddingTop: 20,             //  consistent top spacing
+        paddingTop: 10,             //  consistent top spacing
         minWidth: '45%',
         justifyContent: 'flex-start', //  ensure top alignment
         // shadowColor: '000',
@@ -158,18 +170,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         height: 60,
-        backgroundColor: '#fdfff5',
+        backgroundColor: '#0C2340',
         borderTopWidth: 1,
-        borderTopColor: '#ddd',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        borderTopColor: '#10253dff',
         elevation: 10, // Android shadow
         shadowColor: '#000', // iOS shadow
         shadowOffset: { width: 0, height: -1 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
+        
     },
     navItem: {
         alignItems: 'center',

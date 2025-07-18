@@ -10,7 +10,7 @@ export default function Signup2({ navigation, route }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [major, setMajor] = useState('');
-  const [studentType, setStudentType] = useState('undergrad'); // 'undergrad' or 'grad'
+  const [studentType, setStudentType] = useState('Undergraduate'); // 'Undergraduate' or 'Graduate'
   const [year, setYear] = useState('');
   const [bio, setBio] = useState('');
   const [locationType, setLocationType] = useState('on-campus'); // 'on-campus' or 'off-campus'
@@ -125,8 +125,8 @@ export default function Signup2({ navigation, route }) {
           }}
           style={styles.picker}
         >
-          <Picker.Item label="Undergraduate" value="undergrad" />
-          <Picker.Item label="Graduate" value="grad" />
+          <Picker.Item label="Undergraduate" value="Undergraduate" />
+          <Picker.Item label="Graduate" value="Graduate" />
         </Picker>
       </View>
 
@@ -138,10 +138,10 @@ export default function Signup2({ navigation, route }) {
           onValueChange={setYear}
           style={styles.picker}
         >
-              <Picker.Item label="1st Year" value="1" />
-              <Picker.Item label="2nd Year" value="2" />
-              <Picker.Item label="3rd Year" value="3" />
-              <Picker.Item label="4th Year" value="4" />
+              <Picker.Item label="1st Year" value="1st Year" />
+              <Picker.Item label="2nd Year" value="2nd Year" />
+              <Picker.Item label="3rd Year" value="3rd Year" />
+              <Picker.Item label="4th Year" value="4th Year" />
         </Picker>
       </View>
 
