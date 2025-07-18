@@ -38,6 +38,7 @@ export default function Login({ navigation }) {
       await reload(user);
       console.log('Email verification status:', user.emailVerified);
       
+      
       // Check if email is verified
       if (!user.emailVerified) {
         Alert.alert(

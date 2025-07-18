@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'react-native-get-random-values';
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Image, ScrollView} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,6 +15,11 @@ const AddProductScreen = ({ navigation }) => {
   const [desc, setDesc] = useState('');
   const [image, setImage] = useState(null); // hook this to an image picker later
   const [inputHeight, setInputHeight] = useState(80);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+      navigation.setOptions({ headerShown: !isLoading });
+    }, [isLoading]);
 
 
 const handleSubmit = async () => {
@@ -32,6 +37,7 @@ const handleSubmit = async () => {
     const user = auth.currentUser;
     let imageUrl = '';
 
+    setIsLoading(true);
     try {
       if (image) {
         const response = await fetch(image);
@@ -41,13 +47,19 @@ const handleSubmit = async () => {
         imageUrl = await getDownloadURL(imageRef);
       }
 
-      await addDoc(collection(db, 'listings'), {
+      const docRef = await addDoc(collection(db, 'listings'), {
         name,
         price: parseFloat(price).toFixed(2),
         desc,
         image: imageUrl,
         email: user ? user.email : 'guest@zotstore.com',
-        timestamp: serverTimestamp()
+        userId: user ? user.uid : null,
+        timestamp: serverTimestamp(),
+        status: 'active',
+      });
+
+      await addDoc(collection(db, `users/${user.uid}/listings`), {
+        listingId: docRef.id,
       });
 
       alert("Listing added!");
@@ -60,6 +72,7 @@ const handleSubmit = async () => {
 
   return (
     <View style={styles.container}>
+    <View style={styles.container2}>
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <Text style={styles.header}>Add Listing</Text>
 
@@ -122,26 +135,38 @@ const handleSubmit = async () => {
 
       <Button title="Submit" onPress={handleSubmit} disabled={!name.trim() || !price.trim() || !desc.trim()}/>
     </ScrollView>
+    </View>
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
             <Text style={styles.navText}>📬</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
             <Text style={styles.navText}>📦</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
             <Text style={styles.navText}>👤</Text>
         </TouchableOpacity>
       </View>
+
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <Text style={styles.loadingText}>Updating...</Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: 0,
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container2: {
     padding: 16,
     flex: 1,
     backgroundColor: '#fff',
@@ -177,18 +202,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: '40%', // room for nav bar and floating buttons
   },
+  loadingOverlay: {
+  ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+
+  loadingText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '600',
+  },
   navBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     height: 60,
-    backgroundColor: '#fdfff5',
+    backgroundColor: '#0C2340',
     borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderTopColor: '#1f2b3aff',
     elevation: 10, // Android shadow
     shadowColor: '#000', // iOS shadow
     shadowOffset: { width: 0, height: -1 },

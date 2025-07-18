@@ -1,15 +1,66 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { formatDistanceToNow } from 'date-fns';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { getAuth } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { getDoc } from 'firebase/firestore';
+
+
+
 
 const ViewListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
+  const [sellerInfo, setSellerInfo] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const updatedTime = item.timestamp?.toDate
     ? formatDistanceToNow(item.timestamp.toDate(), { addSuffix: true })
     : 'just now';
 
+  useEffect(() => {
+    const fetchSellerProfile = async () => {
+      if (!item.userId) return;
+
+      try {
+        const userRef = doc(db, 'users', item.userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          setSellerInfo(userSnap.data());
+        }
+      } catch (error) {
+        console.error('Error fetching seller profile:', error);
+      }
+    };
+
+    fetchSellerProfile();
+  }, [item.userId]);
+
+  useEffect(() => {
+    const unsubscribe = getAuth().onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+  const handleArchive = async () => {
+    try {
+      // example - customize as needed
+      await updateDoc(doc(db, 'listings', item.id), {
+        status: 'past'
+      });
+      alert('Listing has been archived.');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error removing listing:', error);
+      alert('Failed to remove listing.');
+    }
+  };
+
   return (
     <View style={styles.container}>
+    <View style={styles.container2}>
+      
     <ScrollView contentContainerStyle={styles.scrollContent}>
       {/* Product Image */}
       {item.image ? (
@@ -29,25 +80,43 @@ const ViewListingScreen = ({ route, navigation }) => {
       </View>
 
       <Text style={styles.price}>${item.price}</Text>
-      <Text style={styles.sectionLabel}>About Listing</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.sectionLabel}>About Listing</Text>
+        {currentUser?.uid === item.userId && item.status === 'active' && (
+          <>
+          <TouchableOpacity onPress={() => handleArchive()}>
+            <Text style={styles.deleteText}>🗑</Text>
+          </TouchableOpacity>
+          </>
+        )}
+      </View> 
       <Text style={styles.desc}>{item.desc}</Text>
 
 
       {/* Seller Profile */}
       <View style={styles.sectionGroup}>
-        <View style={styles.divider} />
-        <TouchableOpacity style={styles.profileCard}>
+        <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Other User', { userId: item.userId })}>
           <Image
-            source={{ uri: 'https://i.pravatar.cc/150?img=12' }}
+            source={{
+              uri: sellerInfo?.profilePic || 'https://i.pravatar.cc/150?img=12'
+            }}
             style={styles.profileImage}
           />
           <View style={styles.profileText}>
-            <Text style={styles.profileName}>Peter Anteater</Text>
-            <Text style={styles.subtleText}>Member Since 03/25</Text>
-            <Text style={styles.subtleText}>Undergraduate · 3rd Year</Text>
+            {sellerInfo ? (
+              <>
+                <Text style={styles.profileName}>{sellerInfo.name || 'Unknown Seller'}</Text>
+    
+                <Text style={styles.subtleText}>{sellerInfo.studentType || 'Student'} · {sellerInfo.year || 'Unknown Year'}</Text>
+                {sellerInfo.major && (
+                  <Text style={styles.subtleText}>{sellerInfo.major}</Text>
+                )}
+              </>
+            ) : (
+              <Text style={styles.subtleText}>Loading seller info...</Text>
+            )}
           </View>
         </TouchableOpacity>
-        <View style={styles.divider} />
       </View>
 
       {/* Location */}
@@ -56,28 +125,34 @@ const ViewListingScreen = ({ route, navigation }) => {
         <Text style={styles.locationText}>Middle Earth — Balin</Text>
       </View>
     </ScrollView>
+    </View>
+    
       {/* Floating Buttons */}
       <TouchableOpacity
         style={styles.messageButton}
-        onPress={() => alert("Message feature coming soon!")}
+        onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
       >
         <Text style={styles.buttonText}>💬</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() => navigation.navigate('Edit Listing', { item })}
-      >
-        <Text style={styles.buttonText}>✏️</Text>
-      </TouchableOpacity>
+      {currentUser?.uid === item.userId && (
+        <>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => navigation.navigate('Edit Listing', { item })}
+          >
+            <Text style={styles.buttonText}>✏️</Text>
+          </TouchableOpacity>
+        </>
+      )}
+      
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
             <Text style={styles.navText}>📬</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
             <Text style={styles.navText}>📦</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
@@ -91,6 +166,10 @@ const ViewListingScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  container2: {
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
@@ -168,6 +247,21 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 6,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+
+  deleteText: {
+    color: '#FFC72C',
+    fontWeight: '600',
+    fontSize: 28,
+    padding: 4,
+    paddingBottom: 8
+    
+  },
   desc: {
     fontSize: 16,
     lineHeight: 24,
@@ -184,7 +278,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 70,
     right: 20,
-    backgroundColor: '#0064a4',
+    backgroundColor: '#0C2340',
     padding: 16,
     borderRadius: 50,
     elevation: 4,
@@ -193,7 +287,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 70,
     left: 20,
-    backgroundColor: '#0064a4',
+    backgroundColor: '#0C2340',
     padding: 16,
     borderRadius: 50,
     elevation: 4,
@@ -206,8 +300,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 0,
-    backgroundColor: '#f4f6f9',
+    
     padding: 12,
+    paddingBottom: 15,
     borderRadius: 10,
   },
   profileImage: {
@@ -250,33 +345,29 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   navBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        height: 60,
-        backgroundColor: '#fdfff5',
-        borderTopWidth: 1,
-        borderTopColor: '#ddd',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        elevation: 10, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: { width: 0, height: -1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    navItem: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    navText: {
-        fontSize: 26,
-        color: '#444',
-        fontWeight: '600',
-        textAlign: 'center',
-    },
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 60,
+    backgroundColor: '#0C2340',
+    borderTopWidth: 1,
+    borderTopColor: '#1f2b3aff',
+    elevation: 10, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: {
+    fontSize: 26,
+    color: '#444',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
 
 export default ViewListingScreen;
