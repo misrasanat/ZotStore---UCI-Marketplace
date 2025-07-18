@@ -1,5 +1,6 @@
 import {StyleSheet} from 'react-native';
 
+
 const styles = StyleSheet.create({
     safeContainer: {
         backgroundColor: '#fff',
@@ -41,28 +42,28 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     searchBar: {
+        flex: 1,
         height: 44,
-        borderRadius: 22,                // pill shape
-        backgroundColor: '#fff',
-        paddingHorizontal: 16,
-        marginBottom: 12,
-
-        borderColor: '#0C2340',
-        borderWidth: 1,
-
-        fontSize: 16,                  // 👈 increase font size for readability
-        fontFamily: 'Inter-Medium',   // 👈 use a clean, popular font
+        fontSize: 16,
+        fontFamily: 'Inter-Medium',
         color: '#222',
-        
-
-        // iOS shadow
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 2,
-
-        // Android elevation
+        borderRadius: 22,
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 22,
+        paddingHorizontal: 12,
+        marginBottom: 12,
+        marginTop: 5,
+        borderColor: '#0C2340',
+        borderWidth: 0.20,
         elevation: 2,
+    },
+
+    searchIcon: {
+        marginRight: 8,
     },
     sellButton: {
         backgroundColor: '#0C2340',

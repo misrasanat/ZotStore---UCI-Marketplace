@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import CustomNavBar from './CustomNavbar.js';
+import Feather from 'react-native-vector-icons/Feather';
 
 
 
@@ -36,13 +37,16 @@ const HomeScreen = ({ navigation, route }) => {
             <SafeAreaView edges={['top']} style={styles.safeContainer}>
             <View style={styles.topSection}>
                 {/* Search Bar */}
-                <TextInput
-                    style={styles.searchBar}
-                    placeholder="🔎 Search ZotStore"
-                    placeholderTextColor="#000"
-                    value={searchQuery}
-                    onChangeText={text => setSearchQuery(text)}
-                />
+                <View style={styles.searchContainer}>
+                    <Feather name="search" size={20} color="#000" style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.searchBar}
+                        placeholder="Search ZotStore"
+                        placeholderTextColor="#000"
+                        value={searchQuery}
+                        onChangeText={text => setSearchQuery(text)}
+                    />
+                </View>
 
                 <View style={styles.listingsRow}>
                     <Text style={styles.listingsHeader}>Listings:</Text>

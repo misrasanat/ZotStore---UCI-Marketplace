@@ -89,7 +89,7 @@ const EditListingScreen = ({ route, navigation }) => {
     <View style={styles.wrapper}>
     <View style={styles.container}>
     <View style={styles.container2}>
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScrollView contentInset={{top: 16}} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.header}>Edit Listing</Text>
 
       <TextInput style={styles.input} placeholder="Product Name" value={name} onChangeText={setName} />
@@ -167,7 +167,7 @@ const EditListingScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#fff' },
-  container2: { padding: 16, flex: 1, backgroundColor: '#fff' },
+  container2: { padding: 16, paddingTop: 0, flex: 1, backgroundColor: '#fff' },
   header: { fontSize: 22, fontWeight: '600', marginBottom: 16 },
   safeContainer2: {
       backgroundColor: '#0C2340',
