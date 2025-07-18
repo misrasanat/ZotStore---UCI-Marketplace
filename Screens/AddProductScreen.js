@@ -75,7 +75,7 @@ const handleSubmit = async () => {
   return (
     <View style={styles.container}>
     <View style={styles.container2}>
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScrollView contentInset={{ top: 16 }} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.header}>Add Listing</Text>
 
       <TextInput style={styles.input} placeholder="Product Name" value={name} onChangeText={setName} />
@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
   },
   container2: {
     padding: 16,
+    paddingTop: 0,
     flex: 1,
     backgroundColor: '#fff',
   },

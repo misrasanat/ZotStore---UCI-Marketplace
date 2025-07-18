@@ -63,7 +63,7 @@ const ViewListingScreen = ({ route, navigation }) => {
     <View style={styles.container}>
     <View style={styles.container2}>
       
-    <ScrollView contentContainerStyle={styles.scrollContent}>
+    <ScrollView contentInset={{top: 40}} contentContainerStyle={styles.scrollContent}>
       {/* Product Image */}
       {item.image ? (
         <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
@@ -167,7 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingTop: 40,
   },
   titleRow: {
     flexDirection: 'row',
