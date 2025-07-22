@@ -13,6 +13,10 @@ export default function Login({ navigation }) {
     return uciEmailRegex.test(email);
   };
 
+  const isTestAccount = (email) => {
+    return email.toLowerCase() === 'testersm@uci.edu';
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields.');
@@ -29,18 +33,19 @@ export default function Login({ navigation }) {
       return;
     }
 
+    setLoading(true);
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       console.log('User logged in:', user.uid);
+      
       // Reload user to get latest email verification status
       await reload(user);
       console.log('Email verification status:', user.emailVerified);
       
-      
-      // Check if email is verified
-      if (!user.emailVerified) {
+      // Skip verification check for test account
+      if (!user.emailVerified && !isTestAccount(email)) {
         Alert.alert(
           'Email Not Verified', 
           'Please check your email and verify your account before logging in. If you have already verified your email, try logging in again.',
@@ -66,8 +71,7 @@ export default function Login({ navigation }) {
         return;
       }
       
-      // Email is verified, let AuthContext handle the routing based on profile completion
-      // No need to navigate manually - AuthContext will detect the user and route appropriately
+      // Email is verified or test account, let AuthContext handle the routing
       
     } catch (error) {
       console.error('Error logging in:', error);

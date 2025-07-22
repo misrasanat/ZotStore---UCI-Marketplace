@@ -30,8 +30,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     topSection: {
-        backgroundColor: '#fff', // soft gold vibe — tweak if you want it richer
-        paddingHorizontal: 16,
+        backgroundColor: '#fff',
+        paddingHorizontal: 12,
         paddingTop: 3,
         paddingBottom: 0,
     },
@@ -52,18 +52,46 @@ const styles = StyleSheet.create({
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 22,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 20,
         paddingHorizontal: 12,
-        marginBottom: 12,
+        marginBottom: 0,
         marginTop: 5,
-        borderColor: '#0C2340',
-        borderWidth: 0.20,
+        borderColor: '#E0E0E0',
+        borderWidth: 1,
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        flex: 1,
+        marginRight: 12,
+        height: 44,
+    },
+    profileButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#0C2340',
+        justifyContent: 'center',
+        alignItems: 'center',
         elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        marginTop: 3,
+    },
+    searchBarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 0,
+        marginBottom: 12,
     },
 
     searchIcon: {
         marginRight: 8,
+        opacity: 0.6,
     },
     sellButton: {
         backgroundColor: '#0C2340',
@@ -75,8 +103,9 @@ const styles = StyleSheet.create({
     sellButtonText: {
         color: '#fff',
         fontWeight: 'bold',
-        paddingHorizontal: '15%',
-        
+        fontSize: 16,
+        marginLeft: 6,
+        letterSpacing: 0.5,
     },
     listingsHeader: {
         fontSize: 18,
@@ -167,12 +196,37 @@ const styles = StyleSheet.create({
     },
     name: {
         fontWeight: '600',
-        fontSize: 20,
+        fontSize: 19,
         color: '#222',
         fontFamily: 'Inter-Medium',
         letterSpacing: 0.3,
         marginTop: 2,
     },
+    floatingActionRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        paddingHorizontal: 20,
+        marginBottom: 15, // 👈 space above nav bar
+        marginTop: -70,
+        zIndex: 1, 
+      },
+    
+      messageButton: {
+        backgroundColor: '#0C2340',
+        paddingVertical: 12,
+        paddingHorizontal: 22,
+        borderRadius: 25,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      },
+      sellButtonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
     navBar: {
         flexDirection: 'row',
         justifyContent: 'space-around',

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation, Image} from 'react-native';
 import { db } from '../firebase';
-import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Keyboard } from 'react-native';
@@ -28,23 +28,86 @@ const ChatScreen = ({route, navigation}) => {
     const receiverId = route.params.userId;
     const chatId = [currentUser.uid, receiverId].sort().join('_');
     
-    const messageRef = collection(db, 'chats', chatId, 'messages');
-    await addDoc(messageRef, {
-      text: newMsg.trim(),
-      senderUid: currentUser.uid,
-      timestamp: new Date()
-    });
-
-    await setDoc(doc(db, 'chats', chatId), {
-      participants: [currentUser.uid, receiverId],
-      lastMessage: {
-        text: newMsg.trim(),
-        timestamp: serverTimestamp()
+    try {
+      // First, get or create chat document with initialized unread counts
+      const chatRef = doc(db, 'chats', chatId);
+      const chatDoc = await getDoc(chatRef);
+      
+      // Initialize chat document if it doesn't exist
+      if (!chatDoc.exists()) {
+        await setDoc(chatRef, {
+          participants: [currentUser.uid, receiverId],
+          unreadCount: {
+            [currentUser.uid]: 0,
+            [receiverId]: 0
+          },
+          lastMessage: null
+        });
       }
-    }, { merge: true });
 
-    setNewMsg('');
+      // Add the message
+      const messageRef = collection(db, 'chats', chatId, 'messages');
+      await addDoc(messageRef, {
+        text: newMsg.trim(),
+        senderUid: currentUser.uid,
+        timestamp: new Date()
+      });
+
+      // Update chat document with new message and increment unread
+      const updateData = {
+        lastMessage: {
+          text: newMsg.trim(),
+          timestamp: serverTimestamp(),
+          senderUid: currentUser.uid
+        }
+      };
+
+      // Initialize or increment unread count for receiver
+      updateData[`unreadCount.${receiverId}`] = increment(1);
+
+      await updateDoc(chatRef, updateData);
+
+      setNewMsg('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
+
+  // Clear unread messages when opening chat
+  useEffect(() => {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    const receiverId = route.params.userId;
+    const chatId = [currentUser.uid, receiverId].sort().join('_');
+    
+    const clearUnread = async () => {
+      try {
+        const chatRef = doc(db, 'chats', chatId);
+        const chatDoc = await getDoc(chatRef);
+        
+        if (chatDoc.exists()) {
+          // Reset unread count for current user
+          await updateDoc(chatRef, {
+            [`unreadCount.${currentUser.uid}`]: 0
+          });
+        } else {
+          // Initialize chat document if it doesn't exist
+          await setDoc(chatRef, {
+            participants: [currentUser.uid, receiverId],
+            unreadCount: {
+              [currentUser.uid]: 0,
+              [receiverId]: 0
+            },
+            lastMessage: null
+          });
+        }
+      } catch (error) {
+        console.error('Error clearing unread count:', error);
+      }
+    };
+
+    clearUnread();
+  }, [route.params.userId]);
 
   useEffect(() => {
     const auth = getAuth();
@@ -102,12 +165,12 @@ const ChatScreen = ({route, navigation}) => {
         </View>
 
         <View style={styles.headerCenter}>
-          {receiverInfo?.profilePic && (
+          {/* {receiverInfo?.profilePic && (
               <Image
                 source={{ uri: receiverInfo.profilePic }}
                 style={{ width: 68, height: 58, borderRadius: 30, marginRight: 0 }}
               />
-            )}
+            )} */}
             <Text style={styles.headerTitle}>{receiverInfo?.name || 'Loading...'}</Text>
         </View>
 
