@@ -14,6 +14,7 @@ const ViewListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
   const [sellerInfo, setSellerInfo] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+
   const updatedTime = item.timestamp?.toDate
     ? formatDistanceToNow(item.timestamp.toDate(), { addSuffix: true })
     : 'just now';
@@ -56,6 +57,29 @@ const ViewListingScreen = ({ route, navigation }) => {
       alert('Failed to remove listing.');
     }
   };
+
+  function getYearString(year) {
+    if (!year) return '';
+    if (year === '1') return '1st Year';
+    if (year === '2') return '2nd Year';
+    if (year === '3') return '3rd Year';
+    if (year === '4') return '4th Year';
+    return `${year} Year`;
+  }
+
+  function getLocationString(sellerInfo) {
+    if (!sellerInfo) return '';
+    if (sellerInfo.locationType === 'on-campus') {
+      let area = '';
+      if (sellerInfo.campusArea === 'middle-earth') area = 'Middle Earth';
+      else if (sellerInfo.campusArea === 'mesa-court') area = 'Mesa Court';
+      else area = sellerInfo.campusArea || '';
+      return `${area}${sellerInfo.buildingName ? ' - ' + sellerInfo.buildingName : ''}`;
+    } else if (sellerInfo.locationType === 'off-campus') {
+      return `Off Campus${sellerInfo.apartmentName ? ' - ' + sellerInfo.apartmentName : ''}`;
+    }
+    return '';
+  }
 
   return (
     <View style={styles.container}>
@@ -107,7 +131,7 @@ const ViewListingScreen = ({ route, navigation }) => {
               <>
                 <Text style={styles.profileName}>{sellerInfo.name || 'Unknown Seller'}</Text>
     
-                <Text style={styles.subtleText}>{sellerInfo.studentType || 'Student'} · {sellerInfo.year || 'Unknown Year'}</Text>
+                <Text style={styles.subtleText}>{sellerInfo.studentType || 'Student'} · { getYearString(sellerInfo.year) || 'Unknown Year'}</Text>
                 {sellerInfo.major && (
                   <Text style={styles.subtleText}>{sellerInfo.major}</Text>
                 )}
@@ -122,7 +146,7 @@ const ViewListingScreen = ({ route, navigation }) => {
       {/* Location */}
       <View style={styles.locationRow}>
         <Text style={styles.locationIcon}>📍</Text>
-        <Text style={styles.locationText}>Middle Earth — Balin</Text>
+        <Text style={styles.locationText}>{getLocationString(sellerInfo)}</Text>
       </View>
     </ScrollView>
     </View>
