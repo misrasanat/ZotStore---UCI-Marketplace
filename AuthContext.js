@@ -14,20 +14,26 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const isTestAccount = (email) => {
+    return email?.toLowerCase() === 'testersm@uci.edu';
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Check if user has a complete profile in Firestore
         try {
           const db = getFirestore();
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log('User profile data:', userData); // Debug log
+            console.log('User profile data:', userData);
             
-            // First check if email is verified
-            if (!user.emailVerified) {
+            // Skip email verification for test account
+            const skipVerification = isTestAccount(user.email);
+            console.log('Skip verification:', skipVerification, 'for email:', user.email);
+            
+            if (!user.emailVerified && !skipVerification) {
               console.log('Email not verified - user cannot access app');
               setUser(null);
               setUserProfile(null);
@@ -36,7 +42,7 @@ export const AuthProvider = ({ children }) => {
           
             // Then check if user has essential fields (name and phone)
             if (userData.name && userData.phone) {
-              console.log('Profile complete and email verified, setting user as authenticated');
+              console.log('Profile complete, setting user as authenticated');
               setUser(user);
               setUserProfile(userData);
             } else {
@@ -46,7 +52,6 @@ export const AuthProvider = ({ children }) => {
             }
           } else {
             console.log('No profile document found for user');
-            // User exists but no profile - they need to complete signup
             setUser(null);
             setUserProfile(null);
           }
@@ -75,21 +80,23 @@ export const AuthProvider = ({ children }) => {
           const userData = userDoc.data();
           console.log('Refreshed user profile data:', userData);
           
-          // First check if email is verified
-          if (!currentUser.emailVerified) {
+          // Skip email verification for test account
+          const skipVerification = isTestAccount(currentUser.email);
+          console.log('Skip verification:', skipVerification, 'for email:', currentUser.email);
+          
+          if (!currentUser.emailVerified && !skipVerification) {
             console.log('Email not verified after refresh - user cannot access app');
             setUser(null);
             setUserProfile(null);
             return;
           }
           
-          // Then check if user has essential fields (name and phone)
           if (userData.name && userData.phone) {
-            console.log('Profile complete and email verified after refresh, setting user as authenticated');
+            console.log('Profile complete, setting user as authenticated');
             setUser(currentUser);
             setUserProfile(userData);
           } else {
-            console.log('Profile incomplete after refresh - missing name or phone');
+            console.log('Profile incomplete - missing name or phone');
             setUser(null);
             setUserProfile(null);
           }

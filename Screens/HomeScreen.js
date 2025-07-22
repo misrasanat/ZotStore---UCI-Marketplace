@@ -6,12 +6,14 @@ import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
-
+import { useAuth } from '../AuthContext';
 
 
 const HomeScreen = ({ navigation, route }) => {
     const [items, setItems] = React.useState([]);
     const [searchQuery, setSearchQuery] = React.useState('');
+    const { userProfile } = useAuth();
+    
     const filteredItems = items.filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -36,25 +38,42 @@ const HomeScreen = ({ navigation, route }) => {
         <View style={styles.container}>
             <SafeAreaView edges={['top']} style={styles.safeContainer}>
             <View style={styles.topSection}>
-                {/* Search Bar */}
-                <View style={styles.searchContainer}>
-                    <Feather name="search" size={20} color="#000" style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.searchBar}
-                        placeholder="Search ZotStore"
-                        placeholderTextColor="#000"
-                        value={searchQuery}
-                        onChangeText={text => setSearchQuery(text)}
-                    />
+                {/* Search Bar and Profile */}
+                <View style={styles.searchBarContainer}>
+                    <View style={styles.searchContainer}>
+                        <Feather name="search" size={20} color="#000" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.searchBar}
+                            placeholder="Search ZotStore"
+                            placeholderTextColor="#000"
+                            value={searchQuery}
+                            onChangeText={text => setSearchQuery(text)}
+                        />
+                    </View>
+                    <TouchableOpacity 
+                        style={styles.profileButton}
+                        onPress={() => navigation.navigate('Profile')}
+                    >
+                        {userProfile?.profilePic ? (
+                            <Image 
+                                source={{ uri: userProfile.profilePic }} 
+                                style={{ width: '100%', height: '100%', borderRadius: 22 }}
+                            />
+                        ) : (
+                            <Feather name="user" size={24} color="#fff" />
+                        )}
+                    </TouchableOpacity>
                 </View>
+                
+                
 
-                <View style={styles.listingsRow}>
+                {/* <View style={styles.listingsRow}>
                     <Text style={styles.listingsHeader}>Listings:</Text>
 
                     <TouchableOpacity style={styles.sellButton} onPress={() => navigation.navigate('AddProduct')}>
                         <Text style={styles.sellButtonText}>Sell Item</Text>
                     </TouchableOpacity>
-                </View>
+                </View> */}
             </View>
             <View style={styles.divider} />
             </SafeAreaView>
@@ -70,6 +89,7 @@ const HomeScreen = ({ navigation, route }) => {
                     ) : (
                         <FlatList
                             data={filteredItems}
+                            showsVerticalScrollIndicator={false}
                             numColumns={2}
                             keyExtractor={(item) => item.id}
                             contentContainerStyle={{
@@ -110,6 +130,17 @@ const HomeScreen = ({ navigation, route }) => {
                                 )}
                         />
                         )}
+                    </View>
+                    <View style={styles.floatingActionRow}>
+                        <TouchableOpacity
+                        style={styles.messageButton}
+                        onPress={() => navigation.navigate('AddProduct')}
+                        >
+                        <View style={styles.sellButtonContainer}>
+                            <Feather name="plus" size={20} color="#fff" />
+                            <Text style={styles.sellButtonText}>Sell Item</Text>
+                        </View>
+                        </TouchableOpacity>
                     </View>
                     <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
                         <CustomNavBar />

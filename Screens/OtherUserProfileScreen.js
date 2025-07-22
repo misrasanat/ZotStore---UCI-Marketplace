@@ -15,7 +15,9 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         const userRef = doc(db, 'users', userId);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
-          setUser(userSnap.data());
+          const userData = userSnap.data();
+          console.log('Fetched user data:', userData);
+          setUser(userData);
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
@@ -24,8 +26,10 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
 
     const fetchUserListings = async () => {
       try {
+        console.log('Fetching listings for user:', userId);
         const q = query(collection(db, 'listings'), where('userId', '==', userId), where('status', '==', 'active'));
         const querySnapshot = await getDocs(q);
+        console.log('Found listings:', querySnapshot.size);
         const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setListings(items);
       } catch (error) {
@@ -98,7 +102,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('My Listings')}
+          onPress={() => navigation.navigate('Other User Listings', { userId, userName: user?.name })}
         >
           <Text style={styles.actionText}>📦 View Listings</Text>
         </TouchableOpacity>

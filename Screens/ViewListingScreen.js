@@ -5,12 +5,9 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getAuth } from 'firebase/auth';
 import { useState, useEffect } from 'react';
-import { getDoc } from 'firebase/firestore'
-import { SafeAreaView } from 'react-native-safe-area-context';;
-import CustomNavBar from './CustomNavbar.js';
-
-
-
+import { getDoc } from 'firebase/firestore';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Feather';
 
 const ViewListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
@@ -23,7 +20,6 @@ const ViewListingScreen = ({ route, navigation }) => {
   useEffect(() => {
     const fetchSellerProfile = async () => {
       if (!item.userId) return;
-
       try {
         const userRef = doc(db, 'users', item.userId);
         const userSnap = await getDoc(userRef);
@@ -34,7 +30,6 @@ const ViewListingScreen = ({ route, navigation }) => {
         console.error('Error fetching seller profile:', error);
       }
     };
-
     fetchSellerProfile();
   }, [item.userId]);
 
@@ -42,16 +37,14 @@ const ViewListingScreen = ({ route, navigation }) => {
     const unsubscribe = getAuth().onAuthStateChanged((user) => {
       setCurrentUser(user);
     });
-
     return () => unsubscribe();
   }, []);
+
   const handleArchive = async () => {
     try {
-      // example - customize as needed
       await updateDoc(doc(db, 'listings', item.id), {
         status: 'past'
       });
-      alert('Listing has been archived.');
       navigation.goBack();
     } catch (error) {
       console.error('Error removing listing:', error);
@@ -59,99 +52,124 @@ const ViewListingScreen = ({ route, navigation }) => {
     }
   };
 
+  const formattedPrice = parseFloat(item.price).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+
   return (
     <View style={styles.container}>
-    <View style={styles.container2}>
-      
-    <ScrollView contentInset={{top: 40}} contentContainerStyle={styles.scrollContent}>
-      {/* Product Image */}
-      {item.image ? (
-        <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.placeholderText}>No Image Available</Text>
-        </View>
-      )}
-
-      {/* Product Info */}
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>{item.name}</Text>
-        <View style={styles.updatedContainer}>
-          <Text style={styles.updatedAt}>Updated: {updatedTime}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.price}>${item.price}</Text>
-      <View style={styles.labelRow}>
-        <Text style={styles.sectionLabel}>About Listing</Text>
-        {currentUser?.uid === item.userId && item.status === 'active' && (
-          <>
-          <TouchableOpacity onPress={() => handleArchive()}>
-            <Text style={styles.deleteText}>🗑</Text>
+      <SafeAreaView edges={['top']} style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Icon name="arrow-left" size={24} color="#0C2340" />
           </TouchableOpacity>
-          </>
-        )}
-      </View> 
-      <Text style={styles.desc}>{item.desc}</Text>
-
-
-      {/* Seller Profile */}
-      <View style={styles.sectionGroup}>
-        <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate('Other User', { userId: item.userId })}>
-          <Image
-            source={{
-              uri: sellerInfo?.profilePic || 'https://i.pravatar.cc/150?img=12'
-            }}
-            style={styles.profileImage}
-          />
-          <View style={styles.profileText}>
-            {sellerInfo ? (
-              <>
-                <Text style={styles.profileName}>{sellerInfo.name || 'Unknown Seller'}</Text>
-    
-                <Text style={styles.subtleText}>{sellerInfo.studentType || 'Student'} · {sellerInfo.year || 'Unknown Year'}</Text>
-                {sellerInfo.major && (
-                  <Text style={styles.subtleText}>{sellerInfo.major}</Text>
-                )}
-              </>
-            ) : (
-              <Text style={styles.subtleText}>Loading seller info...</Text>
+          <Text style={styles.headerTitle}>View Listing</Text>
+          <View style={styles.headerRight}>
+            {currentUser?.uid === item.userId && item.status === 'active' && (
+              <View style={styles.headerActions}>
+                <TouchableOpacity 
+                  onPress={() => navigation.navigate('Edit Listing', { item })}
+                  style={styles.headerButton}
+                >
+                  <Icon name="edit-2" size={20} color="#0C2340" />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={handleArchive}
+                  style={styles.headerButton}
+                >
+                  <Icon name="trash-2" size={20} color="#FF6B6B" />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Location */}
-      <View style={styles.locationRow}>
-        <Text style={styles.locationIcon}>📍</Text>
-        <Text style={styles.locationText}>Middle Earth — Balin</Text>
-      </View>
-    </ScrollView>
-    </View>
-    
-      <View style={styles.floatingActionRow}>
-        <TouchableOpacity
-          style={styles.messageButton}
-          onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
-        >
-          <Text style={styles.buttonText}>💬</Text>
-        </TouchableOpacity>
-
-        {currentUser?.uid === item.userId && (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => navigation.navigate('Edit Listing', { item })}
-          >
-            <Text style={styles.buttonText}>✏️</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      
-      <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
-          <CustomNavBar />
+        </View>
       </SafeAreaView>
+
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        style={styles.content}
+      >
+        {/* Product Image */}
+        {item.image ? (
+          <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Icon name="image" size={40} color="#999" />
+            <Text style={styles.placeholderText}>No Image Available</Text>
+          </View>
+        )}
+
+        <View style={styles.detailsContainer}>
+          {/* Price and Title Section */}
+          <View style={styles.priceSection}>
+            <Text style={styles.price}>{formattedPrice}</Text>
+            <Text style={styles.updatedAt}>{updatedTime}</Text>
+          </View>
+          
+          <Text style={styles.title}>{item.name}</Text>
+
+          {/* Description Section */}
+          <View style={styles.descriptionSection}>
+            <Text style={styles.sectionLabel}>Description</Text>
+            <Text style={styles.desc}>{item.desc}</Text>
+          </View>
+
+          {/* Seller Section */}
+          <View style={styles.sellerSection}>
+            <Text style={styles.sectionLabel}>Seller Information</Text>
+            <TouchableOpacity 
+              style={styles.profileCard} 
+              onPress={() => navigation.navigate('Other User', { userId: item.userId })}
+              activeOpacity={0.7}
+            >
+              <Image
+                source={{
+                  uri: sellerInfo?.profilePic || 'https://i.pravatar.cc/150?img=12'
+                }}
+                style={styles.profileImage}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{sellerInfo?.name || 'Unknown Seller'}</Text>
+                <Text style={styles.profileDetails}>
+                  {sellerInfo?.studentType || 'Student'} · {sellerInfo?.year || 'Unknown Year'}
+                </Text>
+                {sellerInfo?.major && (
+                  <Text style={styles.profileMajor}>{sellerInfo.major}</Text>
+                )}
+              </View>
+              <Icon name="chevron-right" size={24} color="#999" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Location Section */}
+          <View style={styles.locationSection}>
+            <Text style={styles.sectionLabel}>Location</Text>
+            <View style={styles.locationCard}>
+              <Icon name="map-pin" size={20} color="#2e8b57" />
+              <Text style={styles.locationText}>Middle Earth — Balin</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Message Button */}
+      {currentUser?.uid !== item.userId && (
+        <SafeAreaView edges={['bottom']} style={styles.footer}>
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
+            activeOpacity={0.7}
+          >
+            <Icon name="message-square" size={20} color="#fff" style={styles.messageIcon} />
+            <Text style={styles.messageButtonText}>Message Seller</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
     </View>
-    
   );
 };
 
@@ -160,206 +178,174 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  safeContainer2: {
-      backgroundColor: '#0C2340',
-  },
-  container2: {
-    flex: 1,
+  header: {
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  titleRow: {
+  headerContent: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    //alignItems: 'flex-start',
-    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-
-  updatedContainer: {
-    flexShrink: 1,
-    maxWidth: '40%',
-    alignItems: 'flex-end',
-    paddingTop: '2%'
-  },
-
-  updatedAt: {
-    fontSize: 14,
-    color: '#888',
-    fontStyle: 'italic',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0C2340',
+    flex: 1,
     textAlign: 'center',
   },
-  imagePlaceholder: {
-    width: '100%',
-    height: 250,
-    borderRadius: 12,
-    backgroundColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+  backButton: {
+    padding: 4,
   },
-  placeholderText: {
-    color: '#666',
-    fontSize: 16,
+  headerRight: {
+    minWidth: 72,
+    alignItems: 'flex-end',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    padding: 6,
+    marginLeft: 8,
+  },
+  archiveButton: {
+    padding: 4,
+  },
+  content: {
+    flex: 1,
   },
   image: {
     width: '100%',
-    height: 250,
-    borderRadius: 12,
-    marginBottom: 12,
+    height: 300,
+    backgroundColor: '#F8F9FA',
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '400',
-    marginBottom: 4,
-    color: '#1a1a1a',
-    flexShrink: 1,
-    maxWidth: '60%',
-    alignItems: 'flex-end',
-
+  imagePlaceholder: {
+    width: '100%',
+    height: 300,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  price: {
-    fontSize: 25,
-    fontWeight: '700',
-    color: '#2e8b57',
-    marginBottom: 16,
-  },
-  section: {
-    marginTop: 24,
-  },
-  sectionLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#444',
-    marginBottom: 4,
-  },
-  sectionContent: {
+  placeholderText: {
+    marginTop: 12,
+    color: '#999',
     fontSize: 16,
-    color: '#222',
-    lineHeight: 22,
-    backgroundColor: '#f3f3f3',
-    padding: 10,
-    borderRadius: 6,
   },
-  labelRow: {
+  detailsContainer: {
+    padding: 16,
+  },
+  priceSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-
-  deleteText: {
-    color: '#FFC72C',
-    fontWeight: '600',
+  price: {
     fontSize: 28,
-    padding: 4,
-    paddingBottom: 8
-    
+    fontWeight: '700',
+    color: '#2e8b57',
+  },
+  updatedAt: {
+    fontSize: 14,
+    color: '#999',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#0C2340',
+    marginBottom: 24,
+  },
+  descriptionSection: {
+    marginBottom: 24,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   desc: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#333',
-    backgroundColor: '#f8f8f8',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
+    color: '#444',
   },
-  scrollContent: {
-    paddingBottom: '40%', // room for nav bar and floating buttons
-  },
-  floatingActionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 10, // 👈 space above nav bar
-    marginTop: -70,
-    zIndex: 1, 
-  },
-
-  messageButton: {
-    backgroundColor: '#0C2340',
-    padding: 16,
-    borderRadius: 50,
-    elevation: 4,
-  },
-
-  editButton: {
-    backgroundColor: '#0C2340',
-    padding: 16,
-    borderRadius: 50,
-    elevation: 4,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
+  sellerSection: {
+    marginBottom: 24,
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 0,
-    
-    padding: 12,
-    paddingBottom: 15,
-    borderRadius: 10,
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
   },
   profileImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    marginRight: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
   },
-  profileText: {
+  profileInfo: {
     flex: 1,
   },
   profileName: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
+    color: '#0C2340',
+    marginBottom: 4,
   },
-  subtleText: {
+  profileDetails: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  profileMajor: {
     fontSize: 14,
     color: '#666',
   },
-  locationRow: {
+  locationSection: {
+    marginBottom: 24,
+  },
+  locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-  },
-  locationIcon: {
-    fontSize: 18,
-    marginRight: 6,
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
   },
   locationText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#2e8b57',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginLeft: 12,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#bbb', // Slightly bolder for contrast
-    width: '100%',
-    alignSelf: 'center',
-  },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 50,
-    backgroundColor: '#0C2340',
+  footer: {
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#10253dff',
-        
-    },
-  navItem: {
+    borderTopColor: '#E0E0E0',
+    padding: 16,
+  },
+  messageButton: {
+    backgroundColor: '#0C2340',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
   },
-  navText: {
-    fontSize: 26,
-    color: '#444',
+  messageIcon: {
+    marginRight: 8,
+  },
+  messageButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    textAlign: 'center',
   },
 });
 
