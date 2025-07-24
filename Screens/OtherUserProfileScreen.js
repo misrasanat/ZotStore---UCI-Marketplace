@@ -1,13 +1,17 @@
 import React, { useState, useEffect }  from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, ScrollView} from 'react-native';
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useFocusEffect } from '@react-navigation/native';
 
 const OtherUserProfileScreen = ({ navigation, route }) => {
 
   const { userId } = route.params;
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -18,6 +22,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           const userData = userSnap.data();
           console.log('Fetched user data:', userData);
           setUser(userData);
+          //setUser(userSnap.data());
         }
       } catch (error) {
         console.error('Error loading user profile:', error);
@@ -37,11 +42,49 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       }
     };
 
+  const fetchUserReviews = async () => {
+    try {
+      const q = query(
+        collection(db, 'reviews'), 
+        where('reviewedUserId', '==', userId),
+        orderBy('timestamp', 'desc'),
+        limit(5)
+      );
+      const querySnapshot = await getDocs(q);
+      const reviewsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setReviews(reviewsData);
+      
+      // Calculate average rating
+      if (reviewsData.length > 0) {
+        const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
+        setAverageRating(totalRating / reviewsData.length);
+        setTotalReviews(reviewsData.length);
+      } else {
+        setAverageRating(0);
+        setTotalReviews(0);
+      }
+    } catch (error) {
+      console.error('Error loading user reviews:', error);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
     if (userId) {
       fetchUserProfile();
       fetchUserListings();
+      fetchUserReviews();
     }
   }, [userId]);
+
+  // Refresh data when screen comes into focus (e.g., after submitting a review)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userId) {
+        fetchUserReviews();
+      }
+    }, [userId])
+  );
   const renderListing = ({ item }) => (
     <TouchableOpacity
       style={styles.listingCard}
@@ -130,25 +173,43 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
     <View style={styles.reviewsSection}>
         <View style={styles.reviewsHeaderRow}>
             <Text style={styles.sectionHeader2}>Reviews</Text>
-            <TouchableOpacity onPress={() => alert('Leave review coming soon')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Leave Review', { userId, userName: user?.name })}>
                 <Text style={styles.leaveReview}>Leave a Review</Text>
             </TouchableOpacity>
         </View>
         
-        <View style={styles.reviewCard}>
-            <Text style={styles.reviewText}>⭐️⭐️⭐️⭐️⭐️ “Quick replies, super friendly and the fridge was spotless!”</Text>
-            <Text style={styles.reviewer}>— Alex T., 2nd Year</Text>
-        </View>
+        {reviews.length > 0 ? (
+          <>
+            <View style={styles.ratingSummary}>
+              <Text style={styles.averageRating}>{averageRating.toFixed(1)}</Text>
+              <Text style={styles.starsDisplay}>
+                {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))}
+              </Text>
+              <Text style={styles.totalReviews}>({totalReviews} reviews)</Text>
+            </View>
+            
+            {reviews.map((review) => (
+              <View key={review.id} style={styles.reviewCard}>
+                <Text style={styles.reviewText}>
+                  {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)} "{review.comment}"
+                </Text>
+                <Text style={styles.reviewer}>— {review.reviewerName}</Text>
+              </View>
+            ))}
+          </>
+        ) : (
+          <View style={styles.noReviewsCard}>
+            <Text style={styles.noReviewsText}>No reviews yet</Text>
+            <Text style={styles.noReviewsSubtext}>Be the first to review this user!</Text>
+          </View>
+        )}
 
-        <View style={styles.reviewCard}>
-            <Text style={styles.reviewText}>⭐️⭐️⭐️⭐️ “Met on time near Langson, would buy again.”</Text>
-            <Text style={styles.reviewer}>— Janelle M., 4th Year</Text>
-        </View>
-
-        <TouchableOpacity onPress={() => alert('All reviews coming soon')}>
+        {reviews.length > 0 && (
+          <TouchableOpacity onPress={() => navigation.navigate('All Reviews', { userId, userName: user?.name })}>
             <Text style={styles.linkText}>See all reviews →</Text>
-        </TouchableOpacity>
-    </View>
+          </TouchableOpacity>
+        )}
+      </View>
     </ScrollView>
     </View>
   );
@@ -334,6 +395,43 @@ leaveReview: {
   color: '#194a7a',
   fontWeight: '600',
 },
+  ratingSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  averageRating: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginRight: 8,
+  },
+  starsDisplay: {
+    fontSize: 18,
+    color: '#f5b823',
+  },
+  totalReviews: {
+    fontSize: 14,
+    color: '#555',
+    marginLeft: 8,
+  },
+  noReviewsCard: {
+    backgroundColor: '#f5f5f5',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  noReviewsText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  noReviewsSubtext: {
+    fontSize: 14,
+    color: '#555',
+  },
 });
 
 export default OtherUserProfileScreen;

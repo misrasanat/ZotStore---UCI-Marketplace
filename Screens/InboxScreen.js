@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
+import { collection, query, where, getDocs, getDoc, doc, serverTimestamp, updateDoc, onSnapshot } from 'firebase/firestore';
 import { collection, query, where, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { formatRelative } from 'date-fns';
@@ -12,6 +13,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useUnread } from '../UnreadContext'; // adjust path as needed
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
@@ -64,7 +67,15 @@ const InboxScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
+      onPress={async () => {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const chatRef = doc(db, 'chats', item.id);
+        await updateDoc(chatRef, {
+          [`unreadCount.${currentUser.uid}`]: 0
+        });
+        navigation.navigate('Chat Screen', { userId: item.userId });
+      }}
       activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
@@ -105,6 +116,14 @@ const InboxScreen = ({ navigation }) => {
           )}
         </View>
       </View>
+      <Text style={styles.time}>{item.timestamp}</Text>
+      {item.unreadCount > 0 && (
+        <View style={styles.unreadBadge}>
+          <Text style={styles.unreadBadgeText}>
+            {item.unreadCount > 9 ? '9+' : item.unreadCount}
+          </Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 
@@ -116,12 +135,10 @@ const InboxScreen = ({ navigation }) => {
     const chatsRef = collection(db, 'chats');
     const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
 
-    // Set up real-time listener
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       try {
         const convoList = [];
         
-        // Handle both initial load and updates
         for (const docSnap of snapshot.docs) {
           const data = docSnap.data() || {};
           const participants = Array.isArray(data.participants) ? data.participants : [];
@@ -135,7 +152,6 @@ const InboxScreen = ({ navigation }) => {
 
           if (userSnap.exists()) {
             const userData = userSnap.data();
-            // Get unread count for current user
             const unreadCount = data.unreadCount?.[currentUser.uid] || 0;
             
             convoList.push({
@@ -147,18 +163,15 @@ const InboxScreen = ({ navigation }) => {
               timestamp: formatMessageTimestamp(data.lastMessage?.timestamp),
               unreadCount: unreadCount,
               isNew: isNewMessage(data.lastMessage?.timestamp),
-              rawTimestamp: data.lastMessage?.timestamp // Keep raw timestamp for sorting
+              rawTimestamp: data.lastMessage?.timestamp
             });
           }
         }
 
-        // Sort conversations by timestamp and unread status
         convoList.sort((a, b) => {
-          // First sort by unread status
           if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
           if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
           
-          // Then sort by timestamp
           const aTime = a.rawTimestamp?.toDate?.() || new Date(0);
           const bTime = b.rawTimestamp?.toDate?.() || new Date(0);
           return bTime - aTime;
@@ -175,9 +188,10 @@ const InboxScreen = ({ navigation }) => {
       setLoading(false);
     });
 
-    // Cleanup listener on unmount
     return () => unsubscribe();
-  }, []); // Empty dependency array since we want this to run once on mount
+  }, []);
+
+  const { hasUnread } = useUnread(true);
 
   return (
     <View style={styles.container}>
@@ -202,8 +216,9 @@ const InboxScreen = ({ navigation }) => {
           data={conversations}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          
         />
       )}
 

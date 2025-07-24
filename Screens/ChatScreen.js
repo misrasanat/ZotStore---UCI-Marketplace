@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation, Image} from 'react-native';
 import { db } from '../firebase';
-import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
+import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Keyboard } from 'react-native';
@@ -53,19 +53,28 @@ const ChatScreen = ({route, navigation}) => {
         timestamp: new Date()
       });
 
-      // Update chat document with new message and increment unread
-      const updateData = {
-        lastMessage: {
-          text: newMsg.trim(),
-          timestamp: serverTimestamp(),
-          senderUid: currentUser.uid
-        }
-      };
+    // await setDoc(doc(db, 'chats', chatId), {
+    //   participants: [currentUser.uid, receiverId],
+    //   lastMessage: {
+    //     text: newMsg.trim(),
+    //     timestamp: serverTimestamp()
+    //   }
+    // }, { merge: true });
 
-      // Initialize or increment unread count for receiver
-      updateData[`unreadCount.${receiverId}`] = increment(1);
+    // Update chat document with new message and increment unread
+    const updateData = {
+      lastMessage: {
+        text: newMsg.trim(),
+        timestamp: serverTimestamp(),
+        senderUid: currentUser.uid
+      }
+    };
 
-      await updateDoc(chatRef, updateData);
+    // Initialize or increment unread count for receiver
+    updateData[`unreadCount.${receiverId}`] = increment(1);
+
+    await updateDoc(chatRef, updateData);
+
 
       setNewMsg('');
     } catch (error) {
@@ -114,6 +123,11 @@ const ChatScreen = ({route, navigation}) => {
     const currentUser = auth.currentUser;
     const receiverId = route.params.userId;
     const chatId = [currentUser.uid, receiverId].sort().join('_');
+    // Mark as read when chat is opened
+    const chatRef = doc(db, 'chats', chatId);
+    updateDoc(chatRef, {
+      [`unreadCount.${currentUser.uid}`]: 0
+    });
     const showSub = Keyboard.addListener('keyboardDidShow', () => setBottomPadding(0));
     const hideSub = Keyboard.addListener('keyboardDidHide', () => setBottomPadding(30));
 
