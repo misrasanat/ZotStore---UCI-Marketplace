@@ -58,6 +58,14 @@ const ViewListingScreen = ({ route, navigation }) => {
     }
   };
 
+  async function markListingAsSold(listingId, buyerId) {
+    const listingRef = doc(db, "listings", listingId);
+    await updateDoc(listingRef, {
+      status: "sold",
+      buyerId: buyerId,
+    });
+  }
+
   function getYearString(year) {
     if (!year) return '';
     if (year === '1') return '1st Year';

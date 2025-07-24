@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, getDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, serverTimestamp, updateDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { formatRelative } from 'date-fns'
 import {
@@ -11,9 +11,7 @@ import {
   Image,
   StyleSheet,
 } from 'react-native';
-
-
-
+import { useUnread } from '../UnreadContext'; // adjust path as needed
 
 
 const InboxScreen = ({ navigation }) => {
@@ -22,7 +20,15 @@ const InboxScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
+      onPress={async () => {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const chatRef = doc(db, 'chats', item.id);
+        await updateDoc(chatRef, {
+          [`unreadCount.${currentUser.uid}`]: 0
+        });
+        navigation.navigate('Chat Screen', { userId: item.userId });
+      }}
     >
       <Image source={{ uri: item.avatar }} style={styles.avatar} />
       <View style={styles.info}>
@@ -32,57 +38,58 @@ const InboxScreen = ({ navigation }) => {
         </Text>
       </View>
       <Text style={styles.time}>{item.timestamp}</Text>
+      {item.unreadCount > 0 && (
+        <View style={styles.unreadBadge}>
+          <Text style={styles.unreadBadgeText}>
+            {item.unreadCount > 9 ? '9+' : item.unreadCount}
+          </Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 
   useEffect(() => {
-    const fetchChats = async () => {
-      
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
-      const chatsRef = collection(db, 'chats');
-      const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
-      const chatDocs = await getDocs(q);
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+    const chatsRef = collection(db, 'chats');
+    const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
 
+    setLoading(true);
+    const unsubscribe = onSnapshot(q, async (chatDocs) => {
       const convoList = [];
-
-      setLoading(true);
-      try{
-        for (const docSnap of chatDocs.docs) {
-          const data = docSnap.data() || {};
-          const participants = Array.isArray(data.participants) ? data.participants : [];
-          let otherUserId = participants.find(uid => uid !== currentUser.uid);
-          if (!otherUserId && participants.length === 1 && participants[0] === currentUser.uid) {
-            otherUserId = currentUser.uid;
-          }
-          if (!otherUserId) continue; 
-          const userRef = doc(db, 'users', otherUserId);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            convoList.push({
-              id: docSnap.id,
-              user: userData.name || 'Unknown',
-              userId: otherUserId,
-              avatar: userData.profilePic || 'https://i.pravatar.cc/150?img=1',
-              lastMessage: data.lastMessage?.text || '',
-              timestamp: formatRelative(data.lastMessage?.timestamp?.toDate(), new Date()) || 'now'
-            });
-          }
+      for (const docSnap of chatDocs.docs) {
+        const data = docSnap.data() || {};
+        const participants = Array.isArray(data.participants) ? data.participants : [];
+        let otherUserId = participants.find(uid => uid !== currentUser.uid);
+        if (!otherUserId && participants.length === 1 && participants[0] === currentUser.uid) {
+          otherUserId = currentUser.uid;
         }
+        if (!otherUserId) continue; 
+        const userRef = doc(db, 'users', otherUserId);
+        const userSnap = await getDoc(userRef);
 
-        setConversations(convoList);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          convoList.push({
+            id: docSnap.id,
+            user: userData.name || 'Unknown',
+            userId: otherUserId,
+            avatar: userData.profilePic || 'https://i.pravatar.cc/150?img=1',
+            lastMessage: data.lastMessage?.text || '',
+            timestamp: formatRelative(data.lastMessage?.timestamp?.toDate(), new Date()) || 'now',
+            unreadCount: data.unreadCount?.[currentUser.uid] || 0,
+          });
+        }
       }
-    };
+      setConversations(convoList);
+      setLoading(false);
+    });
 
-    fetchChats();
+    return () => unsubscribe();
   }, []);
+
+  const { hasUnread } = useUnread(true);
 
   return (
     <View style={styles.container}>
@@ -104,9 +111,14 @@ const InboxScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
             <Text style={styles.navText}>🏠</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
+        <View style={{ position: 'relative' }}>
+            <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
+                <Text style={styles.navText}>📬</Text>
+            </TouchableOpacity>
+            {hasUnread && (
+                <View style={styles.redDot} />
+            )}
+        </View>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
             <Text style={styles.navText}>📦</Text>
         </TouchableOpacity>
@@ -179,6 +191,32 @@ const styles = StyleSheet.create({
     color: '#444',
     fontWeight: '600',
     textAlign: 'center',
+  },
+  unreadBadge: {
+    backgroundColor: '#d32f2f',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    right: 16,
+    top: 18,
+    paddingHorizontal: 5,
+  },
+  unreadBadgeText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 10,
+  },
+  redDot: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: 'red',
+    borderRadius: 5,
+    width: 10,
+    height: 10,
   },
 });
 
