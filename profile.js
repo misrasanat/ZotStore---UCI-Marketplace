@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { auth, signOut } from './firebase';
 import { useAuth } from './AuthContext';
-import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, getDocs, query, collection, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Picker } from '@react-native-picker/picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,17 +28,15 @@ export default function Profile({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [listingsCount, setListingsCount] = useState(0);
+  const [soldCount, setSoldCount] = useState(0);
+  const [boughtCount, setBoughtCount] = useState(0);
 
   const db = getFirestore();
   const storage = getStorage();
   const user = auth.currentUser;
   const uid = user?.uid;
   const userRef = doc(db, 'users', uid);
-
-  // Mock stats, TODO: Update with actual stats from database
-  const listings = 5;
-  const sold = 2;
-  const bought = 3;
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -68,26 +67,42 @@ export default function Profile({ navigation }) {
         setLoading(false);
       }
     };
+
+    const fetchMarketplaceStats = async () => {
+      if (!uid) return;
+      try {
+        // Total Listings
+        const listingsSnap = await getDocs(query(
+          collection(db, 'listings'),
+          where('userId', '==', uid)
+        ));
+        setListingsCount(listingsSnap.size);
+
+        // Sold Listings
+        const soldSnap = await getDocs(query(
+          collection(db, 'listings'),
+          where('userId', '==', uid),
+          where('status', '==', 'sold')
+        ));
+        setSoldCount(soldSnap.size);
+
+        // Bought Listings
+        const boughtSnap = await getDocs(query(
+          collection(db, 'listings'),
+          where('buyerId', '==', uid),
+          where('status', '==', 'sold')
+        ));
+        setBoughtCount(boughtSnap.size);
+      } catch (error) {
+        console.error('Error fetching marketplace stats:', error);
+      }
+    };
+
     loadUserData();
+    fetchMarketplaceStats();
   }, [uid]);
 
   const pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      if (!result.canceled) {
-        setProfilePic(result.assets[0].uri);
-      }
-    } 
-    catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  };
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -188,8 +203,14 @@ export default function Profile({ navigation }) {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    style={{ flex: 1 }}
+    keyboardVerticalOffset={60} // Adjust if navbar overlaps
+    >
+
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <View style={styles.container}>
       {/* Profile Picture & Name */}
       <View style={styles.headerSection}>
         <TouchableOpacity onPress={pickImage}>
@@ -245,6 +266,7 @@ export default function Profile({ navigation }) {
           )}
         </View>
         <View style={styles.infoRow}>
+          
           <Text style={styles.infoLabel}>Major:</Text>
           {isEditing ? (
             <TextInput
@@ -262,34 +284,38 @@ export default function Profile({ navigation }) {
           <Text style={styles.infoLabel}>Student Type:</Text>
           {isEditing ? (
             <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={studentType}
+              <RNPickerSelect
+                value={studentType}
                 onValueChange={setStudentType}
-                style={styles.picker}
-              >
-                <Picker.Item label="Undergraduate" value="undergrad" />
-                <Picker.Item label="Graduate" value="grad" />
-              </Picker>
+                items={[
+                  { label: 'Undergraduate', value: 'undergrad' },
+                  { label: 'Graduate', value: 'grad' },
+                ]}
+                style={pickerSelectStyles}
+                placeholder={{ label: 'Select Student Type', value: '' }}
+              />
             </View>
           ) : (
             <Text style={styles.infoValue}>{loading ? 'Loading...' : (studentType === 'undergrad' ? 'Undergraduate' : studentType === 'grad' ? 'Graduate' : 'Not set')}</Text>
           )}
         </View>
+        
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Year:</Text>
           {isEditing ? (
             <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={year}
+              <RNPickerSelect
+                value={year}
                 onValueChange={setYear}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select Year" value="" />
-                <Picker.Item label="1st Year" value="1" />
-                <Picker.Item label="2nd Year" value="2" />
-                <Picker.Item label="3rd Year" value="3" />
-                <Picker.Item label="4th Year" value="4" />
-              </Picker>
+                items={[
+                  { label: '1st Year', value: '1' },
+                  { label: '2nd Year', value: '2' },
+                  { label: '3rd Year', value: '3' },
+                  { label: '4th Year', value: '4' },
+                ]}
+                style={pickerSelectStyles}
+                placeholder={{ label: 'Select Year', value: '' }}
+              />
             </View>
           ) : (
             <Text style={styles.infoValue}>{loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}</Text>
@@ -299,15 +325,16 @@ export default function Profile({ navigation }) {
           <Text style={styles.infoLabel}>Location Type:</Text>
           {isEditing ? (
             <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={locationType}
+              <RNPickerSelect
+                value={locationType}
                 onValueChange={setLocationType}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select Location Type" value="" />
-                <Picker.Item label="On Campus" value="on-campus" />
-                <Picker.Item label="Off Campus" value="off-campus" />
-              </Picker>
+                items={[
+                  { label: 'On Campus', value: 'on-campus' },
+                  { label: 'Off Campus', value: 'off-campus' },
+                ]}
+                style={pickerSelectStyles}
+                placeholder={{ label: 'Select Location Type', value: '' }}
+              />
             </View>
           ) : (
             <Text style={styles.infoValue}>{loading ? 'Loading...' : (locationType === 'on-campus' ? 'On Campus' : locationType === 'off-campus' ? 'Off Campus' : 'Not set')}</Text>
@@ -320,15 +347,16 @@ export default function Profile({ navigation }) {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Campus Area:</Text>
               <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={campusArea}
+                <RNPickerSelect
+                  value={campusArea}
                   onValueChange={setCampusArea}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Select Area" value="" />
-                  <Picker.Item label="Middle Earth" value="middle-earth" />
-                  <Picker.Item label="Mesa Court" value="mesa-court" />
-                </Picker>
+                  items={[
+                    { label: 'Middle Earth', value: 'middle-earth' },
+                    { label: 'Mesa Court', value: 'mesa-court' },
+                  ]}
+                  style={pickerSelectStyles}
+                  placeholder={{ label: 'Select Area', value: '' }}
+                />
               </View>
             </View>
             <View style={styles.infoRow}>
@@ -380,15 +408,15 @@ export default function Profile({ navigation }) {
         <Text style={styles.sectionTitle}>Marketplace Stats</Text>
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{listings}</Text>
+            <Text style={styles.statNumber}>{listingsCount}</Text>
             <Text style={styles.statLabel}>Listings</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{sold}</Text>
+            <Text style={styles.statNumber}>{soldCount}</Text>
             <Text style={styles.statLabel}>Sold</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{bought}</Text>
+            <Text style={styles.statNumber}>{boughtCount}</Text>
             <Text style={styles.statLabel}>Bought</Text>
           </View>
         </View>
@@ -447,25 +475,31 @@ export default function Profile({ navigation }) {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
-      
+    </View>
     </ScrollView>
       <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
         <CustomNavBar />
       </SafeAreaView>
-    </View>
-    
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
+    flex: 1,
+    paddingTop: 24,
+    paddingHorizontal: 24,
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
   },
   safeContainer2: {
       backgroundColor: '#0C2340',
   },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'flex-start',
+    paddingBottom: 100, // Gives room above navBar
+  },  
   headerSection: {
     alignItems: 'center',
     marginBottom: 32,
@@ -528,7 +562,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoLabel: {
-    width: 75,
+    width: 100,
     fontSize: 16,
     color: '#6c757d',
     fontWeight: '500',
@@ -537,6 +571,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#495057',
     marginLeft: 8,
+    flex: 1,
   },
   infoInput: {
     flex: 1,
@@ -550,12 +585,6 @@ const styles = StyleSheet.create({
   pickerContainer: {
     flex: 1,
     marginLeft: 8,
-  },
-  picker: {
-    width: '100%',
-    height: 55,
-    borderBottomWidth: 1,
-    borderColor: '#dee2e6',
   },
   statsRow: {
     flexDirection: 'row',
@@ -666,4 +695,32 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+    color: '#495057',
+    backgroundColor: '#ffffff',
+    paddingRight: 30, // to ensure the text is never behind the icon
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+    color: '#495057',
+    backgroundColor: '#ffffff',
+    paddingRight: 30, // to ensure the text is never behind the icon
+  },
+  placeholder: {
+    color: '#6c757d',
+  },
 });

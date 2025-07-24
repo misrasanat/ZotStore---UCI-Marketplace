@@ -17,8 +17,12 @@ import MyListingsScreen from './Screens/MyListingsScreen.js';
 import ChatScreen from './Screens/ChatScreen.js';
 import InboxScreen from './Screens/InboxScreen.js';
 import OtherUserProfileScreen from './Screens/OtherUserProfileScreen.js';
+import LeaveReviewScreen from './Screens/LeaveReviewScreen';
+import AllReviewsScreen from './Screens/AllReviewsScreen';
 import OtherUserListingsScreen from './Screens/OtherUserListingsScreen.js';
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { UnreadProvider } from './UnreadContext';
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
@@ -41,6 +45,8 @@ function Navigation() {
             <Stack.Screen name="Inbox Screen" component={InboxScreen} options={{headerShown: false}} />
             <Stack.Screen name="Chat Screen" component={ChatScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User" component={OtherUserProfileScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: true, title: 'Leave a Review'}} />
+            <Stack.Screen name="All Reviews" component={AllReviewsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
           </>
           ) : (
@@ -61,8 +67,10 @@ function Navigation() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Navigation />
-    </AuthProvider>
+    <UnreadProvider>
+      <AuthProvider>
+        <Navigation />
+      </AuthProvider>
+    </UnreadProvider>
   );
 }
