@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, getDoc, doc, serverTimestamp, updateDoc, onSnapshot } from 'firebase/firestore';
-import { collection, query, where, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { formatRelative } from 'date-fns';
 import {
@@ -116,14 +115,6 @@ const InboxScreen = ({ navigation }) => {
           )}
         </View>
       </View>
-      <Text style={styles.time}>{item.timestamp}</Text>
-      {item.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadBadgeText}>
-            {item.unreadCount > 9 ? '9+' : item.unreadCount}
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 
@@ -218,7 +209,7 @@ const InboxScreen = ({ navigation }) => {
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          
+
         />
       )}
 

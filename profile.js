@@ -7,6 +7,7 @@ import { useAuth } from './AuthContext';
 import { getFirestore, doc, setDoc, getDoc, getDocs, query, collection, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Picker } from '@react-native-picker/picker';
+import RNPickerSelect from 'react-native-picker-select';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './Screens/CustomNavbar.js';
 export default function Profile({ navigation }) {

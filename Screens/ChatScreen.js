@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble';
 import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, navigation, Image} from 'react-native';
 import { db } from '../firebase';
-import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Keyboard } from 'react-native';
@@ -67,11 +67,9 @@ const ChatScreen = ({route, navigation}) => {
         text: newMsg.trim(),
         timestamp: serverTimestamp(),
         senderUid: currentUser.uid
-      }
+      },
+      [`unreadCount.${receiverId}`]: increment(1)
     };
-
-    // Initialize or increment unread count for receiver
-    updateData[`unreadCount.${receiverId}`] = increment(1);
 
     await updateDoc(chatRef, updateData);
 
