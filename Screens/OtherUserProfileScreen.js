@@ -5,7 +5,6 @@ import { db } from '../firebase';
 import { useFocusEffect } from '@react-navigation/native';
 
 const OtherUserProfileScreen = ({ navigation, route }) => {
-
   const { userId } = route.params;
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
@@ -13,34 +12,32 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const userRef = doc(db, 'users', userId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          console.log('Fetched user data:', userData);
-          setUser(userData);
-          //setUser(userSnap.data());
-        }
-      } catch (error) {
-        console.error('Error loading user profile:', error);
+  const fetchUserProfile = async () => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        console.log('Fetched user data:', userData);
+        setUser(userData);
       }
-    };
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
-    const fetchUserListings = async () => {
-      try {
-        console.log('Fetching listings for user:', userId);
-        const q = query(collection(db, 'listings'), where('userId', '==', userId), where('status', '==', 'active'));
-        const querySnapshot = await getDocs(q);
-        console.log('Found listings:', querySnapshot.size);
-        const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setListings(items);
-      } catch (error) {
-        console.error('Error loading user listings:', error);
-      }
-    };
+  const fetchUserListings = async () => {
+    try {
+      console.log('Fetching listings for user:', userId);
+      const q = query(collection(db, 'listings'), where('userId', '==', userId), where('status', '==', 'active'));
+      const querySnapshot = await getDocs(q);
+      console.log('Found listings:', querySnapshot.size);
+      const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setListings(items);
+    } catch (error) {
+      console.error('Error loading user listings:', error);
+    }
+  };
 
   const fetchUserReviews = async () => {
     try {
@@ -77,7 +74,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
     }
   }, [userId]);
 
-  // Refresh data when screen comes into focus (e.g., after submitting a review)
+  // Refresh reviews when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       if (userId) {
@@ -100,9 +97,9 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.screenWrapper}>
-         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Info */}
     <View style={styles.profileSection}>
