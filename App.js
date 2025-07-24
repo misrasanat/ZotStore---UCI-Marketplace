@@ -20,6 +20,7 @@ import OtherUserProfileScreen from './Screens/OtherUserProfileScreen.js';
 import LeaveReviewScreen from './Screens/LeaveReviewScreen';
 import AllReviewsScreen from './Screens/AllReviewsScreen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { UnreadProvider } from './UnreadContext';
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
@@ -63,8 +64,10 @@ function Navigation() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Navigation />
-    </AuthProvider>
+    <UnreadProvider>
+      <AuthProvider>
+        <Navigation />
+      </AuthProvider>
+    </UnreadProvider>
   );
 }
