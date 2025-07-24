@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, getDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { formatRelative } from 'date-fns'
+import { formatRelative } from 'date-fns';
 import {
   View,
   Text,
@@ -10,46 +10,119 @@ import {
   TouchableOpacity,
   Image,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CustomNavBar from './CustomNavbar.js';
+import Feather from 'react-native-vector-icons/Feather';
 
+const formatMessageTimestamp = (timestamp) => {
+  if (!timestamp) return 'now';
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const now = new Date();
+    const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    // If it's today, show only time
+    if (diffInDays === 0) {
+      return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+    
+    // If it's yesterday, show "Yesterday"
+    if (diffInDays === 1) {
+      return 'Yesterday';
+    }
+    
+    // If it's within the last 7 days, show the day name
+    if (diffInDays < 7) {
+      return date.toLocaleDateString([], { weekday: 'long' });
+    }
+    
+    // If it's older than 7 days, show the date
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  } catch (error) {
+    console.log('Error formatting timestamp:', error);
+    return 'now';
+  }
+};
 
-
-
+const isNewMessage = (timestamp) => {
+  if (!timestamp) return false;
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date > new Date(Date.now() - 24 * 60 * 60 * 1000);
+  } catch (error) {
+    console.log('Error checking if message is new:', error);
+    return false;
+  }
+};
 
 const InboxScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
       onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
+      activeOpacity={0.7}
     >
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.info}>
-        <Text style={styles.username}>{item.user}</Text>
-        <Text style={styles.message} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
+      <View style={styles.avatarContainer}>
+        {item.avatar ? (
+          <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarFallback}>
+            <Text style={styles.avatarFallbackText}>
+              {item.user.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
       </View>
-      <Text style={styles.time}>{item.timestamp}</Text>
+      <View style={styles.info}>
+        <View style={styles.topRow}>
+          <Text style={[
+            styles.username,
+            item.unreadCount > 0 && styles.unreadText
+          ]} numberOfLines={1}>{item.user}</Text>
+          <Text style={styles.time}>{item.timestamp}</Text>
+        </View>
+        <View style={styles.messageRow}>
+          <Text 
+            style={[
+              styles.message,
+              item.unreadCount > 0 && styles.unreadText
+            ]} 
+            numberOfLines={1}
+          >
+            {item.lastMessage || 'No messages yet'}
+          </Text>
+          {item.unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>
+                {item.unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
     </TouchableOpacity>
   );
 
   useEffect(() => {
-    const fetchChats = async () => {
-      
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
-      const chatsRef = collection(db, 'chats');
-      const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
-      const chatDocs = await getDocs(q);
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-      const convoList = [];
+    const chatsRef = collection(db, 'chats');
+    const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
 
-      setLoading(true);
-      try{
-        for (const docSnap of chatDocs.docs) {
+    // Set up real-time listener
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      try {
+        const convoList = [];
+        
+        // Handle both initial load and updates
+        for (const docSnap of snapshot.docs) {
           const data = docSnap.data() || {};
           const participants = Array.isArray(data.participants) ? data.participants : [];
           let otherUserId = participants.find(uid => uid !== currentUser.uid);
@@ -62,123 +135,215 @@ const InboxScreen = ({ navigation }) => {
 
           if (userSnap.exists()) {
             const userData = userSnap.data();
+            // Get unread count for current user
+            const unreadCount = data.unreadCount?.[currentUser.uid] || 0;
+            
             convoList.push({
               id: docSnap.id,
               user: userData.name || 'Unknown',
               userId: otherUserId,
               avatar: userData.profilePic || 'https://i.pravatar.cc/150?img=1',
               lastMessage: data.lastMessage?.text || '',
-              timestamp: formatRelative(data.lastMessage?.timestamp?.toDate(), new Date()) || 'now'
+              timestamp: formatMessageTimestamp(data.lastMessage?.timestamp),
+              unreadCount: unreadCount,
+              isNew: isNewMessage(data.lastMessage?.timestamp),
+              rawTimestamp: data.lastMessage?.timestamp // Keep raw timestamp for sorting
             });
           }
         }
 
+        // Sort conversations by timestamp and unread status
+        convoList.sort((a, b) => {
+          // First sort by unread status
+          if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+          if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+          
+          // Then sort by timestamp
+          const aTime = a.rawTimestamp?.toDate?.() || new Date(0);
+          const bTime = b.rawTimestamp?.toDate?.() || new Date(0);
+          return bTime - aTime;
+        });
+
         setConversations(convoList);
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error('Error in real-time update:', error);
       } finally {
         setLoading(false);
       }
-    };
+    }, (error) => {
+      console.error('Real-time listener error:', error);
+      setLoading(false);
+    });
 
-    fetchChats();
-  }, []);
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, []); // Empty dependency array since we want this to run once on mount
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Inbox</Text>
+      <SafeAreaView edges={['top']} style={styles.header}>
+        <Text style={styles.headerTitle}>Messages</Text>
+      </SafeAreaView>
+
       {loading ? (
-        <Text style={{ padding: 16 }}>Loading conversations...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0C2340" />
+        </View>
       ) : conversations.length === 0 ? (
-        <Text style={{ padding: 16, fontStyle: 'italic' }}>No conversations yet.</Text>
+        <View style={styles.emptyContainer}>
+          <Feather name="message-circle" size={50} color="#999" />
+          <Text style={styles.emptyText}>No conversations yet</Text>
+          <Text style={styles.emptySubtext}>
+            Your messages with other users will appear here
+          </Text>
+        </View>
       ) : (
         <FlatList
           data={conversations}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
         />
       )}
 
-    <View style={styles.navBar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-            <Text style={styles.navText}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Inbox Screen')}>
-            <Text style={styles.navText}>📬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('My Listings')}>
-            <Text style={styles.navText}>📦</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-            <Text style={styles.navText}>👤</Text>
-        </TouchableOpacity>
-    </View>
+      <SafeAreaView edges={['bottom']} style={styles.footer}>
+        <CustomNavBar />
+      </SafeAreaView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 50 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   header: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+  },
+  headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    color: '#0C2340',
+    textAlign: 'center',
+    marginVertical: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  listContainer: {
+    paddingTop: 8,
+    paddingBottom: 100,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+  },
+  avatarContainer: {
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    marginRight: 14,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  avatarFallback: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0C2340',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarFallbackText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
   },
   info: {
     flex: 1,
+    justifyContent: 'center',
   },
-  username: {
-    fontSize: 17,
-    fontWeight: '600',
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
     marginBottom: 4,
   },
+  username: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0C2340',
+    flex: 1,
+    marginRight: 8,
+  },
   message: {
-    fontSize: 15,
-    color: '#555',
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
   time: {
     fontSize: 12,
     color: '#999',
   },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    height: 60,
+  footer: {
     backgroundColor: '#0C2340',
-    borderTopWidth: 1,
-    borderTopColor: '#1f2b3aff',
-    elevation: 10, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  navItem: {
+  unreadCard: {
+    backgroundColor: '#F8F9FA',
+  },
+  messageRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
-  navText: {
-    fontSize: 26,
-    color: '#444',
+  unreadText: {
     fontWeight: '600',
-    textAlign: 'center',
+    color: '#0C2340',
+  },
+  badge: {
+    backgroundColor: '#0C2340',
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

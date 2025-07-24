@@ -17,6 +17,7 @@ import MyListingsScreen from './Screens/MyListingsScreen.js';
 import ChatScreen from './Screens/ChatScreen.js';
 import InboxScreen from './Screens/InboxScreen.js';
 import OtherUserProfileScreen from './Screens/OtherUserProfileScreen.js';
+import OtherUserListingsScreen from './Screens/OtherUserListingsScreen.js';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 const Stack = createNativeStackNavigator();
 
@@ -33,13 +34,14 @@ function Navigation() {
         {user && userProfile ? (          <>
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="Profile" component={Profile} />
-            <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true }} />
-            <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: true }} />
-            <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: true }} />
+            <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: false }} />
             <Stack.Screen name="My Listings" component={MyListingsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Inbox Screen" component={InboxScreen} options={{headerShown: false}} />
             <Stack.Screen name="Chat Screen" component={ChatScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User" component={OtherUserProfileScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
           </>
           ) : (
           // Authentication and incomplete profile screens
