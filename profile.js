@@ -246,7 +246,7 @@ export default function Profile({ navigation }) {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardContainer}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
+          // keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
         >
           <ScrollView
             // style={styles.scrollView}
