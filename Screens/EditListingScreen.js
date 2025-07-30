@@ -1,7 +1,20 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Image, ScrollView, ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import 'react-native-get-random-values';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  Image, 
+  ScrollView, 
+  ActivityIndicator, 
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -9,9 +22,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { serverTimestamp } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
-import { Feather } from '@expo/vector-icons';
+import Feather from 'react-native-vector-icons/Feather';
 
-const IMAGE_HEIGHT = Dimensions.get('window').width * 0.4; // Adjust as needed
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const ASPECT_RATIO = 1; // Square images
+const IMAGE_HEIGHT = SCREEN_WIDTH; // Square image preview
 
 const EditListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
@@ -25,9 +40,10 @@ const EditListingScreen = ({ route, navigation }) => {
   const [showCropInstructions, setShowCropInstructions] = useState(false);
 
   useEffect(() => {
-    navigation.setOptions({ headerShown: !isLoading });
+    navigation.setOptions({ headerShown: false});
   }, [isLoading]);
 
+  // Keep the existing update logic intact - DO NOT EDIT THIS SECTION
   const handleUpdate = async () => {
     if (!name.trim() || !price.trim() || !desc.trim()) {
       alert('Please fill in all fields before updating.');
@@ -43,7 +59,6 @@ const EditListingScreen = ({ route, navigation }) => {
         .match(/\/o\/(.*?)\?/); // captures the path after "/o/" and before "?"
       return match ? match[1] : null;
     };
-
 
     if (newImageSelected && image && item.image) {
       try {
@@ -88,21 +103,47 @@ const EditListingScreen = ({ route, navigation }) => {
       setIsLoading(false); // hide overlay regardless
     }
   };
+  // END OF UPDATE SECTION - DO NOT EDIT ABOVE
 
   const pickAndCropImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      alert('Camera roll permissions are needed!');
+      alert('Sorry, we need camera roll permissions to make this work!');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
+
+    let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
     });
+
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      setNewImageSelected(true);
-      setShowCropInstructions(true);
+      try {
+        // Show crop instructions
+        setShowCropInstructions(true);
+        
+        // Manipulate the image
+        const manipulatedImage = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [
+            { resize: { width: 1000 } }, // Resize to a reasonable size while maintaining aspect ratio
+          ],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        
+        setImage(manipulatedImage.uri);
+        setNewImageSelected(true);
+        
+        // Hide instructions after 3 seconds
+        setTimeout(() => {
+          setShowCropInstructions(false);
+        }, 3000);
+      } catch (error) {
+        console.error('Error manipulating image:', error);
+        alert('Error processing image. Please try again.');
+      }
     }
   };
 
@@ -134,7 +175,27 @@ const EditListingScreen = ({ route, navigation }) => {
             style={[styles.imageUpload, { height: IMAGE_HEIGHT }]}
             onPress={pickAndCropImage}
           >
-            <Text style={styles.imageUploadText}>Change Photo</Text>
+            {image ? (
+              <View style={styles.imageContainer}>
+                <Image
+                  source={{ uri: image }}
+                  style={styles.selectedImage}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity 
+                  style={styles.editImageButton}
+                  onPress={pickAndCropImage}
+                >
+                  <Feather name="edit-2" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Feather name="image" size={40} color="#666" />
+                <Text style={styles.imagePlaceholderText}>Add Photo</Text>
+                <Text style={styles.imagePlaceholderSubtext}>Tap to select and crop</Text>
+              </View>
+            )}
           </TouchableOpacity>
 
           {showCropInstructions && (
@@ -146,32 +207,48 @@ const EditListingScreen = ({ route, navigation }) => {
           )}
 
           <View style={styles.form}>
-            <Text style={styles.header}>Edit Listing</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Title</Text>
+              <TextInput 
+                style={styles.input}
+                placeholder="What are you selling?"
+                value={name}
+                onChangeText={setName}
+              />
+            </View>
 
-            <TextInput style={styles.input} placeholder="Product Name" value={name} onChangeText={setName} />
-            <TextInput
-              style={styles.input}
-              placeholder="Price (Ex: 49.99)"
-              value={price}
-              onChangeText={(text) => {
-                const formatted = text.replace(/[^0-9.]/g, '');
-                if (formatted === '') return setPrice('');
-                const valid = formatted.match(/^(\d+)(\.\d{0,2})?$/);
-                if (valid) setPrice(formatted);
-              }}
-              keyboardType="numeric"
-            />
-            
-            <TextInput
-              style={[styles.input, styles.descInput, { height: inputHeight }]}
-              placeholder="Description"
-              value={desc}
-              onChangeText={setDesc}
-              multiline
-              onContentSizeChange={(e) =>
-                setInputHeight(e.nativeEvent.contentSize.height)
-              }
-            />
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Price</Text>
+              <TextInput 
+                style={styles.input}
+                placeholder="0.00"
+                value={price}
+                onChangeText={(text) => {
+                  const formatted = text.replace(/[^0-9.]/g, '');
+                  if (formatted === '') {
+                    setPrice('');
+                    return;
+                  }
+                  const decimalMatch = formatted.match(/^(\d+)(\.\d{0,2})?$/);
+                  if (decimalMatch) {
+                    setPrice(formatted);
+                  }
+                }}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.descInput, { height: Math.max(100, inputHeight) }]}
+                placeholder="Describe your item..."
+                value={desc}
+                onChangeText={setDesc}
+                multiline
+                onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height)}
+              />
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -205,155 +282,139 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    backgroundColor: '#0C2340',
-    paddingTop: Platform.OS === 'ios' ? 50 : 20, // Adjust for safe area
-    paddingBottom: 10,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
   headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-  },
-  backButton: {
-    padding: 8,
+    paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#0C2340',
+  },
+  backButton: {
+    padding: 4,
   },
   headerRight: {
-    width: 40,
+    width: 32,
   },
   content: {
     flex: 1,
+  },
+  imageUpload: {
+    width: '100%',
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+  },
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  editImageButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  imagePlaceholderSubtext: {
+    marginTop: 4,
+    fontSize: 12,
+    color: '#999',
+  },
+  cropInstructions: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 10,
+    zIndex: 1,
+  },
+  cropInstructionsText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
   },
   form: {
     padding: 16,
     paddingBottom: 120, // Extra padding to ensure content is visible above keyboard
   },
-  header: { fontSize: 22, fontWeight: '600', marginBottom: 16 },
-  safeContainer2: {
-      backgroundColor: '#0C2340',
-  },
-  input: {
-    height: 40,
-    borderColor: '#aaa',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 12,
-  },
-  descInput: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  imageUpload: {
-    backgroundColor: '#194a7a',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+  inputContainer: {
     marginBottom: 20,
   },
-  imageUploadText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingBottom: '40%', // room for nav bar and floating buttons
-  },
-  loadingOverlay: {
-  ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-
-  loadingText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '600',
-  },
-  navBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        height: 50,
-        backgroundColor: '#0C2340',
-        borderTopWidth: 1,
-        borderTopColor: '#10253dff',
-        
-    },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navText: {
-    fontSize: 26,
-    color: '#444',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  wrapper: {
-    flex: 1,
-    position: 'relative',
-  },
-  cropInstructions: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  cropInstructionsText: {
+  label: {
     fontSize: 14,
-    color: '#555',
-    textAlign: 'center',
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  descInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 12,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 10,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderTopColor: '#E0E0E0',
+    padding: 16,
   },
   submitButton: {
-    backgroundColor: '#194a7a',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    backgroundColor: '#0C2340',
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#A0A0A0',
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
   },
-  submitButtonDisabled: {
-    backgroundColor: '#ccc',
-    opacity: 0.7,
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 12,
   },
 });
 
