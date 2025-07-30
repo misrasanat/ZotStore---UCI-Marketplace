@@ -331,7 +331,40 @@ export default function Profile({ navigation }) {
                     <Text style={styles.infoValue}>{loading ? 'Loading...' : (major || 'Not set')}</Text>
                   )}
                 </View>
-                <View style={[styles.infoRow, { zIndex: studentTypeOpen ? 4000 : 0 }]}>
+
+                <View style={[styles.infoRow, { zIndex: 4000 }]}>
+                  <Text style={styles.infoLabel}>Year:</Text>
+                  {isEditing ? (
+                    <View style={styles.pickerContainer}>
+                      <DropDownPicker
+                        open={yearOpen}
+                        value={year}
+                        items={yearItems}
+                        setOpen={(open) => {
+                          if (open) closeAllDropdowns('year');
+                          setYearOpen(open);
+                        }}
+                        setValue={setYear}
+                        placeholder="Select Year"
+                        style={styles.dropdown}
+                        dropDownContainerStyle={styles.dropdownContainer}
+                        textStyle={styles.dropdownText}
+                        zIndex={3000}
+                        zIndexInverse={2000}
+                        listMode="SCROLLVIEW"
+                        scrollViewProps={{
+                          nestedScrollEnabled: true,
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <Text style={styles.infoValue}>
+                      {loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={[styles.infoRow, { zIndex: studentTypeOpen ? 3000 : 0 }]}>
                   <Text style={styles.infoLabel}>Student Type:</Text>
                   {isEditing ? (
                     <View style={styles.pickerContainer}>
@@ -363,37 +396,6 @@ export default function Profile({ navigation }) {
                   )}
                 </View>
                 
-                <View style={[styles.infoRow, { zIndex: 3000 }]}>
-                  <Text style={styles.infoLabel}>Year:</Text>
-                  {isEditing ? (
-                    <View style={styles.pickerContainer}>
-                      <DropDownPicker
-                        open={yearOpen}
-                        value={year}
-                        items={yearItems}
-                        setOpen={(open) => {
-                          if (open) closeAllDropdowns('year');
-                          setYearOpen(open);
-                        }}
-                        setValue={setYear}
-                        placeholder="Select Year"
-                        style={styles.dropdown}
-                        dropDownContainerStyle={styles.dropdownContainer}
-                        textStyle={styles.dropdownText}
-                        zIndex={3000}
-                        zIndexInverse={2000}
-                        listMode="SCROLLVIEW"
-                        scrollViewProps={{
-                          nestedScrollEnabled: true,
-                        }}
-                      />
-                    </View>
-                  ) : (
-                    <Text style={styles.infoValue}>
-                      {loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}
-                    </Text>
-                  )}
-                </View>
                 <View style={[styles.infoRow, { zIndex: 2000 }]}>
                   <Text style={styles.infoLabel}>Location Type:</Text>
                   {isEditing ? (
