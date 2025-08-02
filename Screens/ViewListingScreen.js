@@ -164,14 +164,19 @@ const ViewListingScreen = ({ route, navigation }) => {
                 }}
                 style={styles.profileImage}
               />
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{sellerInfo?.name || 'Unknown Seller'}</Text>
-                <Text style={styles.profileDetails}>
-                  {sellerInfo?.studentType || 'Student'} · {sellerInfo?.year || 'Unknown Year'}
-                </Text>
-                {sellerInfo?.major && (
-                  <Text style={styles.profileMajor}>{sellerInfo.major}</Text>
+              <View style={styles.profileText}>
+            {sellerInfo ? (
+              <>
+                <Text style={styles.profileName}>{sellerInfo.name || 'Unknown Seller'}</Text>
+    
+                <Text style={styles.subtleText}>{sellerInfo.studentType || 'Student'} · { getYearString(sellerInfo.year) || 'Unknown Year'}</Text>
+                {sellerInfo.major && (
+                  <Text style={styles.subtleText}>{sellerInfo.major}</Text>
                 )}
+              </>
+            ) : (
+              <Text style={styles.subtleText}>Loading seller info...</Text>
+            )}
               </View>
               <Icon name="chevron-right" size={24} color="#999" />
             </TouchableOpacity>
