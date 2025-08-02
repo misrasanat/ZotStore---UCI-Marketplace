@@ -2,11 +2,13 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
+import { useUnread } from '../UnreadContext';
 
 const CustomNavBar = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const currentScreen = route.name;
+  const { hasUnread } = useUnread();
 
   const getIconColor = (screenName) => {
     const matchScreen = {
@@ -30,7 +32,10 @@ const CustomNavBar = () => {
           style={styles.navItem} 
           onPress={() => navigation.navigate('Inbox Screen')}
         >
-            <Icon name="message-square" size={24} color={getIconColor('Inbox Screen')} />
+            <View style={styles.iconContainer}>
+                <Icon name="message-square" size={24} color={getIconColor('Inbox Screen')} />
+                {hasUnread && <View style={styles.unreadDot} />}
+            </View>
             {currentScreen === 'Inbox Screen' && <View style={styles.activeIndicator} />}
         </TouchableOpacity>
         <TouchableOpacity 
@@ -60,6 +65,20 @@ const styles = StyleSheet.create({
         height: '100%',
         paddingHorizontal: 16,
         position: 'relative',
+    },
+    iconContainer: {
+        position: 'relative',
+    },
+    unreadDot: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#ff0000',
+        borderWidth: 2,
+        borderColor: '#fff',
     },
     activeIndicator: {
         position: 'absolute',

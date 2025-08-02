@@ -13,7 +13,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useUnread } from '../UnreadContext'; // adjust path as needed
-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
