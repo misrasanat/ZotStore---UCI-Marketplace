@@ -16,7 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.sanat.zotstore",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "ZotStore requires access to your photo library to allow you to upload product images.",
+        "NSPhotoLibraryAddUsageDescription": "ZotStore saves listing photos to your photo library.",
+        "NSCameraUsageDescription": "ZotStore uses the camera so you can take pictures of items you're selling."
       }
     },
     "android": {
