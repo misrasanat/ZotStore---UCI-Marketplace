@@ -48,7 +48,11 @@
       <true/>
     </dict>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>ZotStore needs access to your photo library to let you choose and upload product images when listing items for sale.</string>
+    <string>ZotStore requires access to your photo library to allow you to select and upload product images for your listings. This helps buyers see the items you are selling.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>ZotStore needs permission to save photos to your library when you download product images or save your listing photos.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>ZotStore needs camera access to let you take photos of products you want to sell.</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
