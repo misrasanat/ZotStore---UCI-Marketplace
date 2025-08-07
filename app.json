@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sanat.zotstore"
+      "bundleIdentifier": "com.sanat.zotstore",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,6 +30,11 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "zotstore"
+    "scheme": "zotstore",
+    "extra": {
+      "eas": {
+        "projectId": "2cc6239c-7f63-4f25-95c2-6bf1b4c5d411"
+      }
+    }
   }
 }
