@@ -117,7 +117,7 @@ const AllReviewsScreen = ({ navigation, route }) => {
     if (!hasMore) {
       return (
         <View style={styles.footer}>
-          <Text style={styles.footerText}>No more reviews to load</Text>
+          <Text style={styles.footerText}>No more reviews</Text>
         </View>
       );
     }
@@ -177,14 +177,14 @@ const AllReviewsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   backButton: {
     position: 'absolute',
     top: 50,
     left: 20,
     zIndex: 10,
-    backgroundColor: '#fff',
+    
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,

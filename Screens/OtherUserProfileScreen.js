@@ -43,24 +43,31 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
 
   const fetchUserReviews = async () => {
     try {
-      const q = query(
+      // First, get total count of reviews
+      const totalQuery = query(
+        collection(db, 'reviews'), 
+        where('reviewedUserId', '==', userId)
+      );
+      const totalSnapshot = await getDocs(totalQuery);
+      setTotalReviews(totalSnapshot.size);
+
+      // Then fetch limited reviews for display
+      const displayQuery = query(
         collection(db, 'reviews'), 
         where('reviewedUserId', '==', userId),
         orderBy('timestamp', 'desc'),
         limit(5)
       );
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(displayQuery);
       const reviewsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setReviews(reviewsData);
       
-      // Calculate average rating
-      if (reviewsData.length > 0) {
-        const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
-        setAverageRating(totalRating / reviewsData.length);
-        setTotalReviews(reviewsData.length);
+      // Calculate average rating from all reviews
+      if (totalSnapshot.size > 0) {
+        const totalRating = totalSnapshot.docs.reduce((sum, doc) => sum + doc.data().rating, 0);
+        setAverageRating(totalRating / totalSnapshot.size);
       } else {
         setAverageRating(0);
-        setTotalReviews(0);
       }
     } catch (error) {
       console.error('Error loading user reviews:', error);
