@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }) => {
               console.log('Email not verified - user cannot access app');
               setUser(null);
               setUserProfile(null);
+              setLoading(false); //loading is set to false for unverified users
               return;
             }
           
