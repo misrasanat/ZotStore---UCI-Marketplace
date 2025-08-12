@@ -1,16 +1,85 @@
 import React, { useState, useEffect }  from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, ScrollView} from 'react-native';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, ScrollView, Modal, TextInput, Alert, KeyboardAvoidingView, Platform} from 'react-native';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../AuthContext';
 
 const OtherUserProfileScreen = ({ navigation, route }) => {
   const { userId } = route.params;
-  const [user, setUser] = useState(null);
+  const { user: currentUser, userProfile } = useAuth();
+  const [profileUser, setProfileUser] = useState(null);
   const [listings, setListings] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReportType, setSelectedReportType] = useState('');
+  const [reportExplanation, setReportExplanation] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
+  const reportTypes = [
+    { id: 'harassment', label: 'Harassment' },
+    { id: 'scam', label: 'Scam/Fraud' },
+    { id: 'inappropriate', label: 'Inappropriate Content' },
+    { id: 'spam', label: 'Spam' },
+    { id: 'other', label: 'Other' }
+  ];
+
+  const handleReportSubmit = async () => {
+    if (!selectedReportType || !reportExplanation.trim()) {
+      Alert.alert('Error', 'Please select a report type and provide an explanation.');
+      return;
+    }
+    if (reportExplanation.trim().length < 10) {
+      Alert.alert('Error', 'Please provide a more detailed explanation (10+ characters).');
+      return;
+    }
+    if (reportExplanation.trim().length > 500) {
+      Alert.alert('Error', 'Explanation is too long. Please keep it under 500 characters.');
+      return;
+    }
+    setIsSubmittingReport(true);
+    try {
+      const reportData = {
+        reporterId: currentUser.uid,
+        reporterName: userProfile.name,
+        reportedUserId: userId,
+        reportedUserName: profileUser.name,
+        reportType: selectedReportType,
+        explanation: reportExplanation.trim(),
+        timestamp: new Date(),
+        status: 'pending'
+      };
+      // Add report to Firestore
+      await addDoc(collection(db, 'reports'), reportData);
+      // Reset form
+      setSelectedReportType('');
+      setReportExplanation('');
+      setReportModalVisible(false);
+      Alert.alert(
+        'Report Submitted',
+        'Thank you for your report. We will review it and take appropriate action.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      Alert.alert(
+        'Error',
+        'Failed to submit report. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
+  const handleReportCancel = () => {
+    setSelectedReportType('');
+    setReportExplanation('');
+    setReportModalVisible(false);
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -19,7 +88,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       if (userSnap.exists()) {
         const userData = userSnap.data();
         console.log('Fetched user data:', userData);
-        setUser(userData);
+        setProfileUser(userData);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -82,6 +151,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       }
     }, [userId])
   );
+  
   const renderListing = ({ item }) => (
     <TouchableOpacity
       style={styles.listingCard}
@@ -103,34 +173,30 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Info */}
     <View style={styles.profileSection}>
-        {user ? (
+        {profileUser ? (
         <>
-          <Image source={{ uri: user.profilePic || 'https://i.pravatar.cc/150?img=12' }} style={styles.avatar} />
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.email}>{user.email}</Text>
-          <Text style={styles.joined}>Joined {new Date(user.createdAt?.seconds * 1000).toLocaleDateString()}</Text>
+          <Image source={{ uri: profileUser.profilePic || 'https://i.pravatar.cc/150?img=12' }} style={styles.avatar} />
+          <Text style={styles.name}>{profileUser.name}</Text>
+          <Text style={styles.email}>{profileUser.email}</Text>
+          <Text style={styles.joined}>Joined {new Date(profileUser.createdAt?.seconds * 1000).toLocaleDateString()}</Text>
         </>
       ) : (
         <Text>Loading...</Text>
       )}
     </View>
 
-    
-
     {/* Bio */}
     <View style={styles.bioBox}>
-      {user ? (
+      {profileUser ? (
       <>
         <Text style={styles.bioHeader}>About</Text>
-        <Text style={styles.bioText}>{user.bio || 'No bio provided.'}</Text>
+        <Text style={styles.bioText}>{profileUser.bio || 'No bio provided.'}</Text>
       </>
     ) : (
       <Text>Loading...</Text>
     )}
         
     </View>
-
-      
 
       {/* Action Buttons */}
       <View style={styles.actionRow}>
@@ -142,20 +208,20 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.navigate('Other User Listings', { userId, userName: user?.name })}
+          onPress={() => navigation.navigate('Other User Listings', { userId, userName: profileUser?.name })}
         >
           <Text style={styles.actionText}>📦 View Listings</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.reportButton}
-          onPress={() => alert('Reported (demo only)')}
+          onPress={() => setReportModalVisible(true)}
         >
           <Text style={styles.reportText}>⚠️ Report</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.recentListingsSection}>
       {/* Listings Preview */}
+      <View style={styles.recentListingsSection}>
       <Text style={styles.sectionHeader}>Recent Listings</Text>
       <FlatList
         data={listings}
@@ -167,10 +233,11 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       />
       </View>
 
+    {/* Reviews section */}
     <View style={styles.reviewsSection}>
         <View style={styles.reviewsHeaderRow}>
             <Text style={styles.sectionHeader2}>Reviews</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Leave Review', { userId, userName: user?.name })}>
+            <TouchableOpacity onPress={() => navigation.navigate('Leave Review', { userId, userName: profileUser?.name })}>
                 <Text style={styles.leaveReview}>Leave a Review</Text>
             </TouchableOpacity>
         </View>
@@ -202,12 +269,95 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         )}
 
         {reviews.length > 0 && (
-          <TouchableOpacity onPress={() => navigation.navigate('All Reviews', { userId, userName: user?.name })}>
+          <TouchableOpacity onPress={() => navigation.navigate('All Reviews', { userId, userName: profileUser?.name })}>
             <Text style={styles.linkText}>See all reviews →</Text>
           </TouchableOpacity>
         )}
       </View>
     </ScrollView>
+
+    {/* Report Modal */}
+    <Modal
+      visible={reportModalVisible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={handleReportCancel}
+    >
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.modalOverlay}
+      >
+        <View style={styles.modalContent}>
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.modalTitle}>Report User</Text>
+            
+            <Text style={styles.modalSubtitle}>Select report type:</Text>
+            {reportTypes.map((type) => (
+              <TouchableOpacity
+                key={type.id}
+                style={styles.reportTypeOption}
+                onPress={() => setSelectedReportType(type.id)}
+              >
+                <View style={styles.radioContainer}>
+                  <View style={[
+                    styles.radioButton,
+                    selectedReportType === type.id && styles.radioButtonSelected
+                  ]}>
+                    {selectedReportType === type.id && <View style={styles.radioButtonInner} />}
+                  </View>
+                  <Text style={styles.reportTypeLabel}>{type.label}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {selectedReportType && (
+              <>
+                <Text style={styles.modalSubtitle}>Explain what happened:</Text>
+                <TextInput
+                  style={styles.explanationInput}
+                  placeholder="Please provide details about the incident..."
+                  value={reportExplanation}
+                  onChangeText={setReportExplanation}
+                  multiline
+                  numberOfLines={4}
+                  maxLength={500}
+                  textAlignVertical="top"
+                />
+                <Text style={styles.characterCount}>
+                  {reportExplanation.length}/500 characters
+                </Text>
+              </>
+            )}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleReportCancel}
+                disabled={isSubmittingReport}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  (!selectedReportType || !reportExplanation.trim() || isSubmittingReport) && styles.submitButtonDisabled
+                ]}
+                onPress={handleReportSubmit}
+                disabled={!selectedReportType || !reportExplanation.trim() || isSubmittingReport}
+              >
+                <Text style={styles.submitButtonText}>
+                  {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
     </View>
   );
 };
@@ -428,6 +578,123 @@ leaveReview: {
   noReviewsSubtext: {
     fontSize: 14,
     color: '#555',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    margin: 20,
+    maxWidth: 400,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  reportTypeOption: {
+    marginVertical: 4,
+  },
+  radioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  radioButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioButtonSelected: {
+    borderColor: '#194a7a',
+  },
+  radioButtonInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#194a7a',
+  },
+  reportTypeLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  explanationInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  submitButton: {
+    flex: 1,
+    backgroundColor: '#194a7a',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
