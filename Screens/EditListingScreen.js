@@ -23,6 +23,7 @@ import { serverTimestamp } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
@@ -54,35 +55,13 @@ const EditListingScreen = ({ route, navigation }) => {
       return;
     }
 
-    const getImagePathFromUrl = (url) => {
-      const match = decodeURIComponent(url)
-        .match(/\/o\/(.*?)\?/); // captures the path after "/o/" and before "?"
-      return match ? match[1] : null;
-    };
-
-    if (newImageSelected && image && item.image) {
-      try {
-        const oldPath = getImagePathFromUrl(item.image);
-        if (oldPath) {
-          const oldRef = ref(storage, oldPath);
-          await deleteObject(oldRef);
-          console.log('Old image deleted');
-        }
-      } catch (err) {
-        console.warn('Failed to delete old image:', err);
-      }
-    }
     setIsLoading(true);
 
     try {
       let imageUrl = item.image;
 
       if (newImageSelected && image) {
-        const response = await fetch(image);
-        const blob = await response.blob();
-        const imageRef = ref(storage, `listingImages/${uuidv4()}`);
-        await uploadBytes(imageRef, blob);
-        imageUrl = await getDownloadURL(imageRef);
+        imageUrl = await uploadToCloudinary(image);
       }
 
       const itemRef = doc(db, 'listings', item.id);
@@ -121,22 +100,20 @@ const EditListingScreen = ({ route, navigation }) => {
 
     if (!result.canceled) {
       try {
-        // Show crop instructions
         setShowCropInstructions(true);
         
-        // Manipulate the image
+        // Optimize image size
         const manipulatedImage = await ImageManipulator.manipulateAsync(
           result.assets[0].uri,
           [
-            { resize: { width: 1000 } }, // Resize to a reasonable size while maintaining aspect ratio
+            { resize: { width: 600, height: 600 } }, // Fixed size for consistent results
           ],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+          { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
         );
         
         setImage(manipulatedImage.uri);
         setNewImageSelected(true);
         
-        // Hide instructions after 3 seconds
         setTimeout(() => {
           setShowCropInstructions(false);
         }, 3000);
