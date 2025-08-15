@@ -9,6 +9,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "fire
 import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './Screens/CustomNavbar.js';
+import { uploadToCloudinary } from './utils/cloudinary';
 
 export default function Profile({ navigation }) {
   const [profilePic, setProfilePic] = useState(null);
@@ -160,21 +161,8 @@ export default function Profile({ navigation }) {
     try {
       let profilePicUrl = null;
       if (profilePic && !profilePic.startsWith('http')) {
-        // 🧹 Delete old image if one exists
-        if (userData?.profilePic?.includes('firebasestorage.googleapis.com')) {
-          const oldRef = ref(storage, `profilePics/${uid}`);
-          try {
-            await deleteObject(oldRef);
-          } catch (error) {
-            console.warn('No previous image found or could not delete:', error.message);
-          }
-        }
-
-        const response = await fetch(profilePic);
-        const blob = await response.blob();
-        const storageRef = ref(storage, `profilePics/${uid}`);
-        await uploadBytes(storageRef, blob);
-        profilePicUrl = await getDownloadURL(storageRef);
+        // Add Delete logic for previous profile picture from cloudinary if it exists
+        profilePicUrl = await uploadToCloudinary(profilePic);
       } else if (profilePic && profilePic.startsWith('http')) {
         profilePicUrl = profilePic;
       }
@@ -196,10 +184,10 @@ export default function Profile({ navigation }) {
         profilePic: profilePicUrl,
         updatedAt: new Date(),
       }, { merge: true });
+
       setIsEditing(false);
       Alert.alert('Success', 'Profile updated successfully!');
-    } 
-    catch (error) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     }
