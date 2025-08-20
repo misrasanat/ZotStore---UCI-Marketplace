@@ -24,6 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
 import { uploadToCloudinary } from '../utils/cloudinary';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
@@ -39,6 +40,21 @@ const EditListingScreen = ({ route, navigation }) => {
   const [inputHeight, setInputHeight] = useState(80);
   const [isLoading, setIsLoading] = useState(false);
   const [showCropInstructions, setShowCropInstructions] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState(item.category || null);
+  const [categoryItems] = useState([
+    { label: 'Electronics', value: 'electronics' },
+    { label: 'Books', value: 'books' },
+    { label: 'Clothing', value: 'clothing' },
+    { label: 'Furniture', value: 'furniture' },
+    { label: 'Sports Equipment', value: 'sports' },
+    { label: 'Toys & Games', value: 'toys' },
+    { label: 'Home & Kitchen', value: 'home' },
+    { label: 'Beauty & Personal Care', value: 'beauty' },
+    { label: 'Pet Supplies', value: 'pets' },
+    { label: 'Art & Crafts', value: 'art' },
+    { label: 'Other', value: 'other' },
+  ]);
 
   useEffect(() => {
     navigation.setOptions({ headerShown: false});
@@ -69,6 +85,7 @@ const EditListingScreen = ({ route, navigation }) => {
         name,
         price: parseFloat(price).toFixed(2),
         desc,
+        category,
         image: imageUrl,
         timestamp: serverTimestamp(),
       });
@@ -126,27 +143,27 @@ const EditListingScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Feather name="arrow-left" size={24} color="#0C2340" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Listing</Text>
-          <View style={styles.headerRight} />
-        </View>
-      </SafeAreaView>
-
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{flex: 1 }}
       >
+        <SafeAreaView edges={['top']} style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <Feather name="arrow-left" size={24} color="#0C2340" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Edit Listing</Text>
+            <View style={styles.headerRight} />
+          </View>
+        </SafeAreaView>
+        
         <ScrollView 
           style={styles.content} 
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity 
             style={[styles.imageUpload, { height: IMAGE_HEIGHT }]}
@@ -225,6 +242,34 @@ const EditListingScreen = ({ route, navigation }) => {
                 multiline
                 onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height)}
               />
+            </View>
+
+            <View style={[styles.inputContainer]}>
+              <Text style={styles.label}>Category</Text>
+              <View style={{ paddingBottom: 60 }}>
+                <DropDownPicker
+                  open={open}
+                  value={category}
+                  items={categoryItems}
+                  setOpen={setOpen}
+                  setValue={setCategory}
+                  placeholder="Select a category..."
+                  style={{
+                    backgroundColor: '#F8F9FA',
+                    borderRadius: 8,
+                    borderColor: '#ccc',
+                  }}
+                  dropDownContainerStyle={{
+                    backgroundColor: '#F8F9FA',
+                    borderColor: '#ccc',
+                  }}
+                  textStyle={{
+                    fontSize: 16,
+                    color: '#333',
+                  }}
+                  listMode="SCROLLVIEW"
+                />
+              </View>
             </View>
           </View>
         </ScrollView>
