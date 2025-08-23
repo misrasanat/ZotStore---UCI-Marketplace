@@ -8,6 +8,7 @@ import { useHeaderHeight } from '@react-navigation/elements';
 import { Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
+import { useUnread } from '../UnreadContext';
 
 
 
@@ -19,6 +20,7 @@ const ChatScreen = ({route, navigation}) => {
   const flatListRef = useRef(null);
   const headerHeight = useHeaderHeight();
   const [bottomPadding, setBottomPadding] = useState(60);
+  const { refreshUnreadStatus } = useUnread();
 
   const handleSend = async () => {
     if (!newMsg.trim()) return;
@@ -42,6 +44,11 @@ const ChatScreen = ({route, navigation}) => {
             [receiverId]: 0
           },
           lastMessage: null
+        });
+      } else if (!chatDoc.data().participants) {
+        // If chat exists but missing participants field, add it
+        await updateDoc(chatRef, {
+          participants: [currentUser.uid, receiverId]
         });
       }
 
@@ -97,6 +104,8 @@ const ChatScreen = ({route, navigation}) => {
           await updateDoc(chatRef, {
             [`unreadCount.${currentUser.uid}`]: 0
           });
+          // Refresh the unread status immediately
+          refreshUnreadStatus();
         } else {
           // Initialize chat document if it doesn't exist
           await setDoc(chatRef, {
@@ -125,6 +134,11 @@ const ChatScreen = ({route, navigation}) => {
     const chatRef = doc(db, 'chats', chatId);
     updateDoc(chatRef, {
       [`unreadCount.${currentUser.uid}`]: 0
+    }).then(() => {
+      // Refresh the unread status immediately
+      refreshUnreadStatus();
+    }).catch(error => {
+      console.error('Error clearing unread count:', error);
     });
     const showSub = Keyboard.addListener('keyboardDidShow', () => setBottomPadding(0));
     const hideSub = Keyboard.addListener('keyboardDidHide', () => setBottomPadding(30));

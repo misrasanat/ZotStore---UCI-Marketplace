@@ -3,6 +3,9 @@ import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useUnread } from '../UnreadContext';
+import { db } from '../firebase';
+import { doc, setDoc, increment } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const CustomNavBar = () => {
   const navigation = useNavigation();
@@ -71,14 +74,15 @@ const styles = StyleSheet.create({
     },
     unreadDot: {
         position: 'absolute',
-        top: -2,
-        right: -2,
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        top: -6,
+        right: -6,
+        width: 12,
+        height: 12,
+        borderRadius: 8,
         backgroundColor: '#ff0000',
         borderWidth: 2,
         borderColor: '#fff',
+        zIndex: 1000,
     },
     activeIndicator: {
         position: 'absolute',
