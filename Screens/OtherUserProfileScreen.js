@@ -20,11 +20,11 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const reportTypes = [
-    { id: 'harassment', label: 'Harassment' },
-    { id: 'scam', label: 'Scam/Fraud' },
-    { id: 'inappropriate', label: 'Inappropriate Content' },
-    { id: 'spam', label: 'Spam' },
-    { id: 'other', label: 'Other' }
+    { id: 'Harassment', label: 'Harassment' },
+    { id: 'Scam', label: 'Scam/Fraud' },
+    { id: 'Inappropriate', label: 'Inappropriate Content' },
+    { id: 'Spam', label: 'Spam' },
+    { id: 'Other', label: 'Other' }
   ];
 
   const handleReportSubmit = async () => {
