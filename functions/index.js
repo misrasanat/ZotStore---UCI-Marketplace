@@ -1,19 +1,12 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-const {setGlobalOptions} = require("firebase-functions");
-const {onDocumentCreated} = require("firebase-functions/v2/firestore");
-const {onRequest} = require("firebase-functions/v2/https");
-const {initializeApp} = require("firebase-admin/app");
-const {getFirestore} = require("firebase-admin/firestore");
+const { setGlobalOptions } = require("firebase-functions");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onRequest } = require("firebase-functions/v2/https");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
 const nodemailer = require("nodemailer");
 const logger = require("firebase-functions/logger");
+const functions = require("firebase-functions");
+
 
 // Initialize Firebase Admin
 initializeApp();
@@ -21,13 +14,14 @@ initializeApp();
 // Set global options for cost control
 setGlobalOptions({ maxInstances: 10 });
 
-// Email configuration
+
+// Email configuration (uses Firebase config instead of process.env)
 const emailConfig = {
-  service: 'gmail',
+  service: "gmail",
   auth: {
-    user: 'zotstoreuci@gmail.com',
-    pass: process.env.EMAIL_PASSWORD
-  }
+    user: "zotstoreuci@gmail.com",
+    pass: process.env.EMAIL_PASSWORD,
+  },
 };
 
 // Create email transporter
@@ -40,12 +34,12 @@ async function sendReportEmail(reportData) {
     reportedUserName,
     reportType,
     explanation,
-    timestamp
+    timestamp,
   } = reportData;
 
   const mailOptions = {
-    from: 'zotstoreuci@gmail.com',
-    to: 'zotstoreuci@gmail.com',
+    from: "zotstoreuci@gmail.com",
+    to: "zotstoreuci@gmail.com",
     subject: `ZotStore User Reported: ${reportType} - ${reportedUserName}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -69,10 +63,6 @@ async function sendReportEmail(reportData) {
               <td style="padding: 8px 0; font-weight: bold; color: #555;">Reporter:</td>
               <td style="padding: 8px 0; color: #333;">${reporterName}</td>
             </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #555;">Timestamp:</td>
-              <td style="padding: 8px 0; color: #333;">${new Date(timestamp.toDate()).toLocaleString()}</td>
-            </tr>
           </table>
         </div>
         
@@ -88,72 +78,72 @@ async function sendReportEmail(reportData) {
           </p>
         </div>
       </div>
-    `
+    `,
   };
 
   try {
     const result = await transporter.sendMail(mailOptions);
-    logger.info('Report email sent successfully:', result);
+    logger.info("Report email sent successfully:", result);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    logger.error('Error sending report email:', error);
+    logger.error("Error sending report email:", error);
     throw error;
   }
 }
 
 // Cloud Function: Triggered when a new report is created
-exports.sendReportEmail = onDocumentCreated('reports/{reportId}', async (event) => {
+exports.sendReportEmailTrigger = onDocumentCreated(
+  { document: "reports/{reportId}", secrets: ["EMAIL_PASSWORD"] }
+  , async (event) => {
   try {
     const reportData = event.data.data();
     const reportId = event.params.reportId;
-    
+
     logger.info(`Processing new report: ${reportId}`, reportData);
-    
+
     // Send email
     const emailResult = await sendReportEmail(reportData);
-    
+
     // Update the report document with email status
     const db = getFirestore();
-    await db.collection('reports').doc(reportId).update({
+    await db.collection("reports").doc(reportId).update({
       emailSent: true,
       emailSentAt: new Date(),
-      emailMessageId: emailResult.messageId
+      emailMessageId: emailResult.messageId,
     });
-    
+
     logger.info(`Report ${reportId} processed successfully. Email sent.`);
-    
   } catch (error) {
     logger.error(`Error processing report ${event.params.reportId}:`, error);
-    
+
     // Update the report document with error status
     try {
       const db = getFirestore();
-      await db.collection('reports').doc(event.params.reportId).update({
+      await db.collection("reports").doc(event.params.reportId).update({
         emailSent: false,
         emailError: error.message,
-        emailErrorAt: new Date()
+        emailErrorAt: new Date(),
       });
     } catch (updateError) {
-      logger.error('Error updating report with error status:', updateError);
+      logger.error("Error updating report with error status:", updateError);
     }
   }
 });
 
-// Test function to verify email functionality
-exports.testEmail = onRequest(async (request, response) => {
-  try {
-    const testReportData = {
-      reporterName: 'Test User',
-      reportedUserName: 'Test Reported User',
-      reportType: 'Test Report',
-      explanation: 'This is a test report to verify email functionality.',
-      timestamp: new Date()
-    };
-    
-    const result = await sendReportEmail(testReportData);
-    response.json({ success: true, message: 'Test email sent successfully', result });
-  } catch (error) {
-    logger.error('Test email failed:', error);
-    response.status(500).json({ success: false, error: error.message });
-  }
-});
+// // Test function to verify email functionality
+// exports.testEmail = onRequest({ region: "us-central1" }, async (req, res) => {
+//   try {
+//     const testReportData = {
+//       reporterName: "Test User",
+//       reportedUserName: "Test Reported User",
+//       reportType: "Test Report",
+//       explanation: "This is a test report to verify email functionality.",
+//       timestamp: new Date(),
+//     };
+
+//     const result = await sendReportEmailTrigger(testReportData);
+//     res.json({ success: true, message: "Test email sent successfully", result });
+//   } catch (error) {
+//     res.status(500).json({ success: false, error: error.message });
+//   }
+// });
