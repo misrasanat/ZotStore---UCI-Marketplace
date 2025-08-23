@@ -61,6 +61,7 @@ const isNewMessage = (timestamp) => {
 const InboxScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { refreshUnreadStatus } = useUnread();
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -72,6 +73,8 @@ const InboxScreen = ({ navigation }) => {
         await updateDoc(chatRef, {
           [`unreadCount.${currentUser.uid}`]: 0
         });
+        // Refresh the unread status immediately
+        refreshUnreadStatus();
         navigation.navigate('Chat Screen', { userId: item.userId });
       }}
       activeOpacity={0.7}
@@ -181,7 +184,7 @@ const InboxScreen = ({ navigation }) => {
     return () => unsubscribe();
   }, []);
 
-  const { hasUnread } = useUnread(true);
+  const { hasUnread } = useUnread();
 
   return (
     <View style={styles.container}>

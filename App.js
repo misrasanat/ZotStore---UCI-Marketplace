@@ -67,10 +67,10 @@ function Navigation() {
 
 export default function App() {
   return (
-    <UnreadProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <UnreadProvider>
         <Navigation />
-      </AuthProvider>
-    </UnreadProvider>
+      </UnreadProvider>
+    </AuthProvider>
   );
 }
