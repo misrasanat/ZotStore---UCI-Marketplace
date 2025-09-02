@@ -198,6 +198,63 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         
     </View>
 
+    {/* Contact & Location (privacy-aware) */}
+    {profileUser && (
+      <View style={styles.contactBox}>
+        <Text style={styles.sectionHeader}>Contact & Location</Text>
+        {(() => {
+          const privacy = profileUser?.settings?.privacy || {};
+          const showPhone = privacy.showPhone === true;
+          const locationDetail = privacy.locationDetail || 'off';
+
+          // Phone
+          const phoneRow = showPhone && profileUser.phone ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{profileUser.phone}</Text>
+            </View>
+          ) : null;
+
+          // Location
+          const isOnCampus = profileUser.locationType === 'on-campus';
+          const campusLabelMap = {
+            'middle-earth': 'Middle Earth',
+            'mesa-court': 'Mesa Court',
+          };
+          let locationText = '';
+          if (locationDetail === 'area') {
+            if (isOnCampus) {
+              locationText = campusLabelMap[profileUser.campusArea] || 'On Campus';
+            } else if (profileUser.locationType === 'off-campus') {
+              locationText = 'Off Campus';
+            }
+          } else if (locationDetail === 'precise') {
+            if (isOnCampus) {
+              const area = campusLabelMap[profileUser.campusArea] || 'On Campus';
+              const building = profileUser.buildingName ? ` - ${profileUser.buildingName}` : '';
+              locationText = `${area}${building}`;
+            } else if (profileUser.locationType === 'off-campus') {
+              locationText = profileUser.apartmentName ? `Off Campus - ${profileUser.apartmentName}` : 'Off Campus';
+            }
+          }
+          const locationRow = locationDetail !== 'off' && locationText ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Location</Text>
+              <Text style={styles.infoValue}>{locationText}</Text>
+            </View>
+          ) : null;
+
+          if (!phoneRow && !locationRow) return null;
+          return (
+            <>
+              {phoneRow}
+              {locationRow}
+            </>
+          );
+        })()}
+      </View>
+    )}
+
       {/* Action Buttons */}
       <View style={styles.actionRow}>
         <TouchableOpacity
@@ -578,6 +635,27 @@ leaveReview: {
   noReviewsSubtext: {
     fontSize: 14,
     color: '#555',
+  },
+  contactBox: {
+    marginTop: 16,
+    paddingHorizontal: 24,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    width: 80,
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '600',
+  },
+  infoValue: {
+    flex: 1,
+    fontSize: 15,
+    color: '#222',
+    marginLeft: 8,
   },
   // Modal styles
   modalOverlay: {
