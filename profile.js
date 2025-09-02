@@ -200,7 +200,7 @@ export default function Profile({ navigation }) {
 
   const handleAdditionalSettings = () => {
     // TODO: Add real additional settings logic
-    Alert.alert('Prompt to settings page!');
+    navigation.navigate('Settings');
   };
 
   return (

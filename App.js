@@ -20,6 +20,7 @@ import OtherUserProfileScreen from './Screens/OtherUserProfileScreen.js';
 import LeaveReviewScreen from './Screens/LeaveReviewScreen';
 import AllReviewsScreen from './Screens/AllReviewsScreen';
 import OtherUserListingsScreen from './Screens/OtherUserListingsScreen.js';
+import SettingsScreen from './Screens/SettingsScreen.js';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UnreadProvider } from './UnreadContext';
@@ -48,6 +49,7 @@ function Navigation() {
             <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: true, title: 'Leave a Review'}} />
             <Stack.Screen name="All Reviews" component={AllReviewsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
+            <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true, title: 'Settings' }} />
           </>
           ) : (
           // Authentication and incomplete profile screens
