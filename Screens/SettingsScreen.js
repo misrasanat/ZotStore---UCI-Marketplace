@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, deleteField } from 'firebase/firestore';
 import { auth } from '../firebase';
-import { Picker } from '@react-native-picker/picker';
 
 export default function SettingsScreen({ navigation }) {
   const db = getFirestore();
@@ -20,7 +19,7 @@ export default function SettingsScreen({ navigation }) {
 
   // Privacy
   const [showPhone, setShowPhone] = useState(false);
-  const [locationDetail, setLocationDetail] = useState('off'); // 'off' | 'area' | 'precise'
+  const [showFullLocation, setShowFullLocation] = useState(false);
 
   // Security - change password
   const [currentPassword, setCurrentPassword] = useState('');
@@ -39,7 +38,8 @@ export default function SettingsScreen({ navigation }) {
         setNotifListings(s?.notifications?.listings ?? true);
         setNotifReviews(s?.notifications?.reviews ?? true);
         setShowPhone(s?.privacy?.showPhone ?? false);
-        setLocationDetail(s?.privacy?.locationDetail ?? 'off');
+        const legacyDetail = s?.privacy?.locationDetail;
+        setShowFullLocation(s?.privacy?.showFullLocation ?? (legacyDetail === 'precise'));
       }
     } catch (e) {
       console.error('Failed to load settings', e);
@@ -83,11 +83,11 @@ export default function SettingsScreen({ navigation }) {
 
   const onToggleShowPhone = async (value) => {
     setShowPhone(value);
-    await saveSettings({ privacy: { showPhone: value, locationDetail } });
+    await saveSettings({ privacy: { showPhone: value, showFullLocation, locationDetail: deleteField() } });
   };
-  const onChangeLocationDetail = async (value) => {
-    setLocationDetail(value);
-    await saveSettings({ privacy: { showPhone, locationDetail: value } });
+  const onToggleFullLocation = async (value) => {
+    setShowFullLocation(value);
+    await saveSettings({ privacy: { showPhone, showFullLocation: value, locationDetail: deleteField() } });
   };
 
   const handleChangePassword = async () => {
@@ -158,21 +158,10 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.label}>Show Phone Number</Text>
           <Switch value={showPhone} onValueChange={onToggleShowPhone} />
         </View>
-        <View style={styles.rowColumn}>
-          <Text style={styles.label}>Location Detail</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker selectedValue={locationDetail} onValueChange={onChangeLocationDetail}>
-              <Picker.Item label="Off" value="off" />
-              <Picker.Item label="Area only" value="area" />
-              <Picker.Item label="Precise" value="precise" />
-            </Picker>
-          </View>
+        <View style={styles.rowBetween}>
+          <Text style={styles.label}>Show Full Location</Text>
+          <Switch value={showFullLocation} onValueChange={onToggleFullLocation} />
         </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <Text style={styles.helper}>ZotStore — UCI Marketplace</Text>
       </View>
     </ScrollView>
   );

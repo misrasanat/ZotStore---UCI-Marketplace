@@ -156,6 +156,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   useFocusEffect(
     React.useCallback(() => {
       if (userId) {
+        fetchUserProfile();
         fetchUserReviews();
       }
     }, [userId])
@@ -215,61 +216,57 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         </View>
 
         {/* Contact & Location (privacy-aware) */}
-        {profileUser && (
-          <View style={styles.contactBox}>
-            <Text style={styles.sectionHeader}>Contact & Location</Text>
-            {(() => {
-              const privacy = profileUser?.settings?.privacy || {};
-              const showPhone = privacy.showPhone === true;
-              const locationDetail = privacy.locationDetail || 'off';
+        {profileUser && (() => {
+          const privacy = profileUser?.settings?.privacy || {};
+          const showPhone = privacy.showPhone === true;
+          const hasNewFlag = typeof privacy.showFullLocation === 'boolean';
+          const showFullLocation = hasNewFlag ? (privacy.showFullLocation === true) : (privacy.locationDetail === 'precise');
 
-              // Phone
-              const phoneRow = showPhone && profileUser.phone ? (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Phone</Text>
-                  <Text style={styles.infoValue}>{profileUser.phone}</Text>
-                </View>
-              ) : null;
+          // Phone
+          const phoneRow = showPhone && profileUser.phone ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{profileUser.phone}</Text>
+            </View>
+          ) : null;
 
-              // Location
-              const isOnCampus = profileUser.locationType === 'on-campus';
-              const campusLabelMap = {
-                'middle-earth': 'Middle Earth',
-                'mesa-court': 'Mesa Court',
-              };
-              let locationText = '';
-              if (locationDetail === 'area') {
-                if (isOnCampus) {
-                  locationText = campusLabelMap[profileUser.campusArea] || 'On Campus';
-                } else if (profileUser.locationType === 'off-campus') {
-                  locationText = 'Off Campus';
-                }
-              } else if (locationDetail === 'precise') {
-                if (isOnCampus) {
-                  const area = campusLabelMap[profileUser.campusArea] || 'On Campus';
-                  const building = profileUser.buildingName ? ` - ${profileUser.buildingName}` : '';
-                  locationText = `${area}${building}`;
-                } else if (profileUser.locationType === 'off-campus') {
-                  locationText = profileUser.apartmentName ? `Off Campus - ${profileUser.apartmentName}` : 'Off Campus';
-                }
-              }
-              const locationRow = locationDetail !== 'off' && locationText ? (
+          // Location (only when showFullLocation)
+          let locationRow = null;
+          if (showFullLocation) {
+            const isOnCampus = profileUser.locationType === 'on-campus';
+            const campusLabelMap = {
+              'middle-earth': 'Middle Earth',
+              'mesa-court': 'Mesa Court',
+            };
+            let locationText = '';
+            if (isOnCampus) {
+              const area = campusLabelMap[profileUser.campusArea] || 'On Campus';
+              const building = profileUser.buildingName ? ` - ${profileUser.buildingName}` : '';
+              locationText = `${area}${building}`;
+            } else if (profileUser.locationType === 'off-campus') {
+              locationText = profileUser.apartmentName ? `Off Campus - ${profileUser.apartmentName}` : 'Off Campus';
+            }
+            if (locationText) {
+              locationRow = (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Location</Text>
                   <Text style={styles.infoValue}>{locationText}</Text>
                 </View>
-              ) : null;
-
-              if (!phoneRow && !locationRow) return null;
-              return (
-                <>
-                  {phoneRow}
-                  {locationRow}
-                </>
               );
-            })()}
-          </View>
-        )}
+            }
+          }
+
+          // Only render the entire section if at least one item is shown
+          if (!phoneRow && !locationRow) return null;
+
+          return (
+            <View style={styles.contactBox}>
+              <Text style={styles.sectionHeader}>Contact & Location</Text>
+              {phoneRow}
+              {locationRow}
+            </View>
+          );
+        })()}
 
           {/* Action Buttons */}
           <View style={styles.actionRow}>
@@ -533,7 +530,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         fontSize: 18,
         fontWeight: '700',
         marginTop: 12,
-        marginLeft: 16,
+        marginLeft: 0,
         marginBottom: 12,
       },
       sectionHeader2: {
