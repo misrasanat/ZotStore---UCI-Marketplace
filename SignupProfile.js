@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView 
 import { auth  } from './firebase';
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { useAuth } from './AuthContext';
-import { Picker } from '@react-native-picker/picker';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 export default function Signup2({ navigation, route }) {
   const { refreshAuthState } = useAuth();
@@ -23,6 +23,39 @@ export default function Signup2({ navigation, route }) {
   const uid = user.uid;
   const userRef = doc(db, 'users', uid);
 
+  // Add these state variables for picker open states
+  const [studentTypeOpen, setStudentTypeOpen] = useState(false);
+  const [yearOpen, setYearOpen] = useState(false);
+  const [locationTypeOpen, setLocationTypeOpen] = useState(false);
+  const [campusAreaOpen, setCampusAreaOpen] = useState(false);
+
+  // Add picker items state
+  const [studentTypeItems] = useState([
+    { label: 'Undergraduate', value: 'Undergraduate' },
+    { label: 'Graduate', value: 'Graduate' },
+  ]);
+  const [yearItems] = useState([
+    { label: '1st Year', value: '1st Year' },
+    { label: '2nd Year', value: '2nd Year' },
+    { label: '3rd Year', value: '3rd Year' },
+    { label: '4th Year', value: '4th Year' },
+  ]);
+  const [locationTypeItems] = useState([
+    { label: 'On Campus', value: 'on-campus' },
+    { label: 'Off Campus', value: 'off-campus' },
+  ]);
+  const [campusAreaItems] = useState([
+    { label: 'Middle Earth', value: 'middle-earth' },
+    { label: 'Mesa Court', value: 'mesa-court' },
+  ]);
+
+  // Add closeAllDropdowns function
+  const closeAllDropdowns = (except) => {
+    if (except !== 'studentType') setStudentTypeOpen(false);
+    if (except !== 'year') setYearOpen(false);
+    if (except !== 'locationType') setLocationTypeOpen(false);
+    if (except !== 'campusArea') setCampusAreaOpen(false);
+  };
 
   const validatePhone = (phone) => {
     const phoneRegex = /^\d{10,}$/;
@@ -115,68 +148,101 @@ export default function Signup2({ navigation, route }) {
       />
 
             {/* Student Type Selection */}
-      <View style={styles.pickerContainer}>
+      <View style={[styles.pickerContainer, { zIndex: 4000 }]}>
         <Text style={styles.pickerLabel}>Student Type *</Text>
-        <Picker
-          selectedValue={studentType}
-          onValueChange={(itemValue) => {
-            setStudentType(itemValue);
-            setYear(''); // Reset year when student type changes
+        <DropDownPicker
+          open={studentTypeOpen}
+          value={studentType}
+          items={studentTypeItems}
+          setOpen={(open) => {
+            if (open) closeAllDropdowns('studentType');
+            setStudentTypeOpen(open);
           }}
-          style={styles.picker}
-        >
-          <Picker.Item label="Undergraduate" value="Undergraduate" />
-          <Picker.Item label="Graduate" value="Graduate" />
-        </Picker>
+          setValue={setStudentType}
+          placeholder="Select Student Type"
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+          textStyle={styles.dropdownText}
+          zIndex={4000}
+          zIndexInverse={1000}
+          listMode="SCROLLVIEW"
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+          }}
+        />
       </View>
 
       {/* Year Selection */}
-      <View style={styles.pickerContainer}>
+      <View style={[styles.pickerContainer, { zIndex: 3000 }]}>
         <Text style={styles.pickerLabel}>Year</Text>
-        <Picker
-          selectedValue={year}
-          onValueChange={setYear}
-          style={styles.picker}
-        >
-              <Picker.Item label="1st Year" value="1st Year" />
-              <Picker.Item label="2nd Year" value="2nd Year" />
-              <Picker.Item label="3rd Year" value="3rd Year" />
-              <Picker.Item label="4th Year" value="4th Year" />
-        </Picker>
+        <DropDownPicker
+          open={yearOpen}
+          value={year}
+          items={yearItems}
+          setOpen={(open) => {
+            if (open) closeAllDropdowns('year');
+            setYearOpen(open);
+          }}
+          setValue={setYear}
+          placeholder="Select Year"
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+          textStyle={styles.dropdownText}
+          zIndex={3000}
+          zIndexInverse={2000}
+          listMode="SCROLLVIEW"
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+          }}
+        />
       </View>
 
       {/* Location Type Selection */}
-      <View style={styles.pickerContainer}>
+      <View style={[styles.pickerContainer, { zIndex: 2000 }]}>
         <Text style={styles.pickerLabel}>Location Type</Text>
-        <Picker
-          selectedValue={locationType}
-          onValueChange={(itemValue) => {
-            setLocationType(itemValue);
-            setCampusArea('');
-            setBuildingName('');
-            setApartmentName('');
+        <DropDownPicker
+          open={locationTypeOpen}
+          value={locationType}
+          items={locationTypeItems}
+          setOpen={(open) => {
+            if (open) closeAllDropdowns('locationType');
+            setLocationTypeOpen(open);
           }}
-          style={styles.picker}
-        >
-          <Picker.Item label="On Campus" value="on-campus" />
-          <Picker.Item label="Off Campus" value="off-campus" />
-        </Picker>
+          setValue={setLocationType}
+          placeholder="Select Location Type"
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownContainer}
+          textStyle={styles.dropdownText}
+          listMode="SCROLLVIEW"
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+          }}
+        />
       </View>
 
       {/* On Campus Options */}
       {locationType === 'on-campus' && (
         <>
-          <View style={styles.pickerContainer}>
+          <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
             <Text style={styles.pickerLabel}>Campus Area</Text>
-            <Picker
-              selectedValue={campusArea}
-              onValueChange={setCampusArea}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select Area" value="" />
-              <Picker.Item label="Middle Earth" value="middle-earth" />
-              <Picker.Item label="Mesa Court" value="mesa-court" />
-            </Picker>
+            <DropDownPicker
+              open={campusAreaOpen}
+              value={campusArea}
+              items={campusAreaItems}
+              setOpen={(open) => {
+                if (open) closeAllDropdowns('campusArea');
+                setCampusAreaOpen(open);
+              }}
+              setValue={setCampusArea}
+              placeholder="Select Campus Area"
+              style={styles.dropdown}
+              dropDownContainerStyle={styles.dropdownContainer}
+              textStyle={styles.dropdownText}
+              listMode="SCROLLVIEW"
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+              }}
+            />
           </View>
 
           <TextInput
@@ -256,8 +322,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   pickerContainer: {
-    width: '100%',
-    marginBottom: 18,
+    marginBottom: 20,
   },
   pickerLabel: {
     fontSize: 16,
@@ -265,13 +330,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '500',
   },
-  picker: {
-    width: '100%',
-    height: 50,
+  dropdown: {
     borderColor: '#dee2e6',
-    borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: '#ffffff',
+    minHeight: 40,
+  },
+  dropdownContainer: {
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: '#495057',
   },
   continueButton: {
     width: '100%',

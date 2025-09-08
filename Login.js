@@ -97,6 +97,13 @@ export default function Login({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        onPress={() => navigation.goBack()}
+        style={styles.backButton}
+      >
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
+      <View style={styles.container2}>
       <Text style={styles.title}>Login</Text>
       <Text style={styles.subtitle}>Welcome back to ZotStore</Text>
       
@@ -138,6 +145,7 @@ export default function Login({ navigation }) {
           <Text style={styles.signupLink}>Sign Up</Text>
         </TouchableOpacity>
       </View>
+      </View>
     </View>
   );
 }
@@ -145,10 +153,26 @@ export default function Login({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f5f7fa',
     padding: 24,
+    paddingBottom: 0,
+  },
+  container2: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 50,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  backIcon: {
+    fontSize: 30,
+    color: '#0064a4',
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 28,
@@ -204,4 +228,4 @@ const styles = StyleSheet.create({
     color: '#0064a4',
     fontWeight: 'bold',
   },
-}); 
+});

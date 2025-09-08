@@ -3,6 +3,8 @@ import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, ScrollView, 
 import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../AuthContext';
 
 const OtherUserProfileScreen = ({ navigation, route }) => {
@@ -110,24 +112,31 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
 
   const fetchUserReviews = async () => {
     try {
-      const q = query(
+      // First, get total count of reviews
+      const totalQuery = query(
+        collection(db, 'reviews'), 
+        where('reviewedUserId', '==', userId)
+      );
+      const totalSnapshot = await getDocs(totalQuery);
+      setTotalReviews(totalSnapshot.size);
+
+      // Then fetch limited reviews for display
+      const displayQuery = query(
         collection(db, 'reviews'), 
         where('reviewedUserId', '==', userId),
         orderBy('timestamp', 'desc'),
         limit(5)
       );
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(displayQuery);
       const reviewsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setReviews(reviewsData);
       
-      // Calculate average rating
-      if (reviewsData.length > 0) {
-        const totalRating = reviewsData.reduce((sum, review) => sum + review.rating, 0);
-        setAverageRating(totalRating / reviewsData.length);
-        setTotalReviews(reviewsData.length);
+      // Calculate average rating from all reviews
+      if (totalSnapshot.size > 0) {
+        const totalRating = totalSnapshot.docs.reduce((sum, doc) => sum + doc.data().rating, 0);
+        setAverageRating(totalRating / totalSnapshot.size);
       } else {
         setAverageRating(0);
-        setTotalReviews(0);
       }
     } catch (error) {
       console.error('Error loading user reviews:', error);
@@ -167,13 +176,15 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.screenWrapper}>
+      <SafeAreaView edges={['top']} style={styles.safeTop}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Text style={styles.backIcon}>←</Text>
+        <Icon name="arrow-left" size={24} color="#0C2340" />
       </TouchableOpacity>
+      </SafeAreaView>
     <ScrollView contentContainerStyle={styles.container}>
       {/* Profile Info */}
     <View style={styles.profileSection}>
-        {profileUser ? (
+        {user ? (
         <>
           <Image source={{ uri: profileUser.profilePic || 'https://i.pravatar.cc/150?img=12' }} style={styles.avatar} />
           <Text style={styles.name}>{profileUser.name}</Text>
@@ -421,52 +432,48 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   container: {  
-  backgroundColor: '#fff',
-  position: 'relative',
-},
-screenWrapper: {
-  flex: 1,
-  position: 'relative',
-},
+    backgroundColor: '#fff',
+    position: 'relative',
+  },
+  screenWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  safeTop: {
+    backgroundColor: '#fff',
+  },
+  backButton: {
+    marginTop: 10,
+    marginLeft: 20,
+    zIndex: 10,
+  },
+  backIcon: {
+    color: '#194a7a',
+    fontSize: 40,
+    fontWeight: 'bold',
+    paddingTop: 15,
+  },
+  bioBox: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+  },
 
-backButton: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  zIndex: 10,
-  backgroundColor: '#fff',
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-  borderRadius: 20,
-},
+  bioHeader: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 6,
+  },
 
-backIcon: {
-  color: '#194a7a',
-  fontSize: 40,
-  fontWeight: 'bold',
-  paddingTop: 15,
-},
-bioBox: {
-  marginTop: 24,
-  paddingHorizontal: 24,
-},
-
-bioHeader: {
-  fontSize: 18,
-  fontWeight: '700',
-  color: '#1a1a1a',
-  marginBottom: 6,
-},
-
-bioText: {
-  fontSize: 15,
-  color: '#333',
-  lineHeight: 22,
-  letterSpacing: 0.3,
-},
+  bioText: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 22,
+    letterSpacing: 0.3,
+  },
   profileSection: {
     alignItems: 'center',
-    marginTop: 32,
+    marginTop: 16,
     paddingHorizontal: 20,
   },
   avatar: {
@@ -559,46 +566,46 @@ bioText: {
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 40,
-},
+  },
 
-reviewCard: {
-  backgroundColor: '#f5f5f5',
-  padding: 12,
-  borderRadius: 10,
-  marginBottom: 12,
-},
+  reviewCard: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
 
-reviewText: {
-  fontSize: 15,
-  lineHeight: 20,
-  color: '#222',
-},
+  reviewText: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: '#222',
+  },
 
-reviewer: {
-  fontSize: 13,
-  color: '#555',
-  marginTop: 6,
-  fontStyle: 'italic',
-},
+  reviewer: {
+    fontSize: 13,
+    color: '#555',
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
 
-linkText: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#194a7a',
-  marginTop: 8,
-},
-reviewsHeaderRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 12,
-},
+  linkText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#194a7a',
+    marginTop: 8,
+  },
+  reviewsHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
 
-leaveReview: {
-  fontSize: 15,
-  color: '#194a7a',
-  fontWeight: '600',
-},
+  leaveReview: {
+    fontSize: 15,
+    color: '#194a7a',
+    fontWeight: '600',
+  },
   ratingSummary: {
     flexDirection: 'row',
     alignItems: 'center',
