@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { KeyboardAvoidingView, Platform } from 'react-native';
+import { KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { auth, signOut } from './firebase';
 import { useAuth } from './AuthContext';
 import { getFirestore, doc, setDoc, getDoc, getDocs, query, collection, where } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { Picker } from '@react-native-picker/picker';
-import RNPickerSelect from 'react-native-picker-select';
+import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './Screens/CustomNavbar.js';
+import { uploadToCloudinary } from './utils/cloudinary';
+
 export default function Profile({ navigation }) {
   const [profilePic, setProfilePic] = useState(null);
   const [name, setName] = useState('');
@@ -33,11 +34,45 @@ export default function Profile({ navigation }) {
   const [soldCount, setSoldCount] = useState(0);
   const [boughtCount, setBoughtCount] = useState(0);
 
+  // Dropdown open states
+  const [studentTypeOpen, setStudentTypeOpen] = useState(false);
+  const [yearOpen, setYearOpen] = useState(false);
+  const [locationTypeOpen, setLocationTypeOpen] = useState(false);
+  const [campusAreaOpen, setCampusAreaOpen] = useState(false);
+
+  // Dropdown items
+  const [studentTypeItems] = useState([
+    { label: 'Undergraduate', value: 'undergrad' },
+    { label: 'Graduate', value: 'grad' },
+  ]);
+  const [yearItems] = useState([
+    { label: '1st Year', value: '1' },
+    { label: '2nd Year', value: '2' },
+    { label: '3rd Year', value: '3' },
+    { label: '4th Year', value: '4' },
+  ]);
+  const [locationTypeItems] = useState([
+    { label: 'On Campus', value: 'on-campus' },
+    { label: 'Off Campus', value: 'off-campus' },
+  ]);
+  const [campusAreaItems] = useState([
+    { label: 'Middle Earth', value: 'middle-earth' },
+    { label: 'Mesa Court', value: 'mesa-court' },
+  ]);
+
   const db = getFirestore();
   const storage = getStorage();
   const user = auth.currentUser;
   const uid = user?.uid;
   const userRef = doc(db, 'users', uid);
+
+  // Close all dropdowns when one opens
+  const closeAllDropdowns = (except) => {
+    if (except !== 'studentType') setStudentTypeOpen(false);
+    if (except !== 'year') setYearOpen(false);
+    if (except !== 'locationType') setLocationTypeOpen(false);
+    if (except !== 'campusArea') setCampusAreaOpen(false);
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -126,21 +161,8 @@ export default function Profile({ navigation }) {
     try {
       let profilePicUrl = null;
       if (profilePic && !profilePic.startsWith('http')) {
-        // 🧹 Delete old image if one exists
-        if (userData?.profilePic?.includes('firebasestorage.googleapis.com')) {
-          const oldRef = ref(storage, `profilePics/${uid}`);
-          try {
-            await deleteObject(oldRef);
-          } catch (error) {
-            console.warn('No previous image found or could not delete:', error.message);
-          }
-        }
-
-        const response = await fetch(profilePic);
-        const blob = await response.blob();
-        const storageRef = ref(storage, `profilePics/${uid}`);
-        await uploadBytes(storageRef, blob);
-        profilePicUrl = await getDownloadURL(storageRef);
+        // Add Delete logic for previous profile picture from cloudinary if it exists
+        profilePicUrl = await uploadToCloudinary(profilePic);
       } else if (profilePic && profilePic.startsWith('http')) {
         profilePicUrl = profilePic;
       }
@@ -162,10 +184,10 @@ export default function Profile({ navigation }) {
         profilePic: profilePicUrl,
         updatedAt: new Date(),
       }, { merge: true });
+
       setIsEditing(false);
       Alert.alert('Success', 'Profile updated successfully!');
-    } 
-    catch (error) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     }
@@ -204,302 +226,376 @@ export default function Profile({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    style={{ flex: 1 }}
-    keyboardVerticalOffset={60} // Adjust if navbar overlaps
-    >
+    <View style={styles.mainContainer}>
+      <TouchableWithoutFeedback onPress={() => {
+        Keyboard.dismiss();
+        closeAllDropdowns();
+      }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardContainer}
+          // keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
+        >
+          <ScrollView
+            // style={styles.scrollView}
+            // contentContainerStyle={styles.scrollContainer}
+            // keyboardShouldPersistTaps="handled"
+            // showsVerticalScrollIndicator={false}
+            // bounces={true}
+            // scrollEventThrottle={16}
 
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-    <View style={styles.container}>
-      {/* Profile Picture & Name */}
-      <View style={styles.headerSection}>
-        <TouchableOpacity onPress={pickImage}>
-          <Image
-            source={profilePic ? { uri: profilePic } : require('./assets/icon.png')}
-            style={styles.avatar}
-            defaultSource={require('./assets/icon.png')}
-          />
-          {isEditing && <Text style={styles.editPhotoText}>Edit Photo</Text>}
-        </TouchableOpacity>
-        {isEditing ? (
-          <TextInput
-            style={styles.nameInput}
-            value={name}
-            onChangeText={setName}
-            placeholder="Full Name"
-          />
-        ) : (
-          <Text style={styles.name}>{loading ? 'Loading...' : (name || 'No name set')}</Text>
-        )}
-        <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
-      </View>
-
-      {/* Account Info */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Info</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Phone:</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.infoInput}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Phone Number"
-              keyboardType="phone-pad"
-            />
-          ) : (
-            <Text style={styles.infoValue}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
-          )}
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Bio:</Text>
-          {isEditing ? (
-            <TextInput
-              style={[styles.infoInput, { height: 60 }]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Short bio"
-              multiline
-            />
-          ) : (
-            <Text style={styles.infoValue}>{loading ? 'Loading...' : (bio)}</Text>
-          )}
-        </View>
-        <View style={styles.infoRow}>
-          
-          <Text style={styles.infoLabel}>Major:</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.infoInput}
-              value={major}
-              onChangeText={setMajor}
-              placeholder="Major"
-              autoCapitalize="words"
-            />
-          ) : (
-            <Text style={styles.infoValue}>{loading ? 'Loading...' : (major || 'Not set')}</Text>
-          )}
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Student Type:</Text>
-          {isEditing ? (
-            <View style={styles.pickerContainer}>
-              <RNPickerSelect
-                value={studentType}
-                onValueChange={setStudentType}
-                items={[
-                  { label: 'Undergraduate', value: 'undergrad' },
-                  { label: 'Graduate', value: 'grad' },
-                ]}
-                style={pickerSelectStyles}
-                placeholder={{ label: 'Select Student Type', value: '' }}
-              />
-            </View>
-          ) : (
-            <Text style={styles.infoValue}>{loading ? 'Loading...' : (studentType === 'undergrad' ? 'Undergraduate' : studentType === 'grad' ? 'Graduate' : 'Not set')}</Text>
-          )}
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Year:</Text>
-          {isEditing ? (
-            <View style={styles.pickerContainer}>
-              <RNPickerSelect
-                value={year}
-                onValueChange={setYear}
-                items={[
-                  { label: '1st Year', value: '1' },
-                  { label: '2nd Year', value: '2' },
-                  { label: '3rd Year', value: '3' },
-                  { label: '4th Year', value: '4' },
-                ]}
-                style={pickerSelectStyles}
-                placeholder={{ label: 'Select Year', value: '' }}
-              />
-            </View>
-          ) : (
-            <Text style={styles.infoValue}>{loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}</Text>
-          )}
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Location Type:</Text>
-          {isEditing ? (
-            <View style={styles.pickerContainer}>
-              <RNPickerSelect
-                value={locationType}
-                onValueChange={setLocationType}
-                items={[
-                  { label: 'On Campus', value: 'on-campus' },
-                  { label: 'Off Campus', value: 'off-campus' },
-                ]}
-                style={pickerSelectStyles}
-                placeholder={{ label: 'Select Location Type', value: '' }}
-              />
-            </View>
-          ) : (
-            <Text style={styles.infoValue}>{loading ? 'Loading...' : (locationType === 'on-campus' ? 'On Campus' : locationType === 'off-campus' ? 'Off Campus' : 'Not set')}</Text>
-          )}
-        </View>
-
-        {/* On Campus Options */}
-        {isEditing && locationType === 'on-campus' && (
-          <>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Campus Area:</Text>
-              <View style={styles.pickerContainer}>
-                <RNPickerSelect
-                  value={campusArea}
-                  onValueChange={setCampusArea}
-                  items={[
-                    { label: 'Middle Earth', value: 'middle-earth' },
-                    { label: 'Mesa Court', value: 'mesa-court' },
-                  ]}
-                  style={pickerSelectStyles}
-                  placeholder={{ label: 'Select Area', value: '' }}
-                />
-              </View>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Building:</Text>
-              <TextInput
-                style={styles.infoInput}
-                value={buildingName}
-                onChangeText={setBuildingName}
-                placeholder="Building Name"
-                autoCapitalize="words"
-              />
-            </View>
-          </>
-        )}
-
-        {/* Off Campus Options */}
-        {isEditing && locationType === 'off-campus' && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Apartment:</Text>
-            <TextInput
-              style={styles.infoInput}
-              value={apartmentName}
-              onChangeText={setApartmentName}
-              placeholder="Apartment Name"
-              autoCapitalize="words"
-            />
-          </View>
-        )}
-
-        {/* Display Location Info when not editing */}
-        {!isEditing && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Location:</Text>
-            <Text style={styles.infoValue}>
-              {loading ? 'Loading...' : (
-                locationType === 'on-campus' 
-                  ? `On Campus - ${campusArea === 'middle-earth' ? 'Middle Earth' : campusArea === 'mesa-court' ? 'Mesa Court' : ''} - ${buildingName || ''}`
-                  : locationType === 'off-campus'
-                  ? `Off Campus - ${apartmentName || ''}`
-                  : 'Not set'
-              )}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Marketplace Stats */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Marketplace Stats</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{listingsCount}</Text>
-            <Text style={styles.statLabel}>Listings</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{soldCount}</Text>
-            <Text style={styles.statLabel}>Sold</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{boughtCount}</Text>
-            <Text style={styles.statLabel}>Bought</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Edit Profile & Change Password */}
-      <View style={styles.section}>
-        {isEditing ? (
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          </TouchableOpacity>
-        ) : (
-          <>
-            <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-              <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.changePasswordButton} onPress={() => setShowPasswordForm(!showPasswordForm)}>
-              <Text style={styles.changePasswordText}>Change Password</Text>
-            </TouchableOpacity>
-            {showPasswordForm && (
-              <View style={styles.passwordForm}>
-                <TextInput
-                  style={styles.infoInput}
-                  value={currentPassword}
-                  onChangeText={setCurrentPassword}
-                  placeholder="Current Password"
-                  secureTextEntry
-                />
-                <TextInput
-                  style={styles.infoInput}
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  placeholder="New Password"
-                  secureTextEntry
-                />
-                <TextInput
-                  style={styles.infoInput}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Confirm New Password"
-                  secureTextEntry
-                />
-                <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword}>
-                  <Text style={styles.saveButtonText}>Save Password</Text>
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled" 
+              keyboardDismissMode="interactive"
+              contentContainerStyle={{ paddingBottom: 100 }}
+              nestedScrollEnabled={true}  // ✅ Add this
+          >
+            <View style={styles.container}>
+              {/* Profile Picture & Name */}
+              <View style={styles.headerSection}>
+                <TouchableOpacity onPress={pickImage}>
+                  <Image
+                    source={profilePic ? { uri: profilePic } : require('./assets/icon.png')}
+                    style={styles.avatar}
+                    defaultSource={require('./assets/icon.png')}
+                  />
+                  {isEditing && <Text style={styles.editPhotoText}>Edit Photo</Text>}
                 </TouchableOpacity>
+                {isEditing ? (
+                  <TextInput
+                    style={styles.nameInput}
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Full Name"
+                  />
+                ) : (
+                  <Text style={styles.name}>{loading ? 'Loading...' : (name || 'No name set')}</Text>
+                )}
+                <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
               </View>
-            )}
-            <TouchableOpacity style={styles.settingsButton} onPress={handleAdditionalSettings}>
-              <Text style={styles.settingsText}>Additional Settings</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
-    </ScrollView>
-      <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+              {/* Account Info */}
+              <TouchableOpacity activeOpacity={1} style={[styles.section]}>
+                <Text style={styles.sectionTitle}>Account Info</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Phone:</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.infoInput}
+                      value={phone}
+                      onChangeText={setPhone}
+                      placeholder="Phone Number"
+                      keyboardType="phone-pad"
+                    />
+                  ) : (
+                    <Text style={styles.infoValue}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
+                  )}
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Bio:</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={[styles.infoInput, { height: 60 }]}
+                      value={bio}
+                      onChangeText={setBio}
+                      placeholder="Short bio"
+                      multiline
+                    />
+                  ) : (
+                    <Text style={styles.infoValue}>{loading ? 'Loading...' : (bio)}</Text>
+                  )}
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Major:</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.infoInput}
+                      value={major}
+                      onChangeText={setMajor}
+                      placeholder="Major"
+                      autoCapitalize="words"
+                    />
+                  ) : (
+                    <Text style={styles.infoValue}>{loading ? 'Loading...' : (major || 'Not set')}</Text>
+                  )}
+                </View>
+
+                <View style={[styles.infoRow, { zIndex: 4000 }]}>
+                  <Text style={styles.infoLabel}>Year:</Text>
+                  {isEditing ? (
+                    <View style={styles.pickerContainer}>
+                      <DropDownPicker
+                        open={yearOpen}
+                        value={year}
+                        items={yearItems}
+                        setOpen={(open) => {
+                          if (open) closeAllDropdowns('year');
+                          setYearOpen(open);
+                        }}
+                        setValue={setYear}
+                        placeholder="Select Year"
+                        style={styles.dropdown}
+                        dropDownContainerStyle={styles.dropdownContainer}
+                        textStyle={styles.dropdownText}
+                        zIndex={3000}
+                        zIndexInverse={2000}
+                        listMode="SCROLLVIEW"
+                        scrollViewProps={{
+                          nestedScrollEnabled: true,
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <Text style={styles.infoValue}>
+                      {loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={[styles.infoRow, { zIndex: studentTypeOpen ? 3000 : 0 }]}>
+                  <Text style={styles.infoLabel}>Student Type:</Text>
+                  {isEditing ? (
+                    <View style={styles.pickerContainer}>
+                      <DropDownPicker
+                        open={studentTypeOpen}
+                        value={studentType}
+                        items={studentTypeItems}
+                        setOpen={(open) => {
+                          if (open) closeAllDropdowns('studentType');
+                          setStudentTypeOpen(open);
+                        }}
+                        setValue={setStudentType}
+                        placeholder="Select Student Type"
+                        style={styles.dropdown}
+                        dropDownContainerStyle={styles.dropdownContainer}
+                        textStyle={styles.dropdownText}
+                        zIndex={4000}
+                        zIndexInverse={1000}
+                        listMode="SCROLLVIEW"
+                        scrollViewProps={{
+                          nestedScrollEnabled: true,
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <Text style={styles.infoValue}>
+                      {loading ? 'Loading...' : (studentType === 'undergrad' ? 'Undergraduate' : studentType === 'grad' ? 'Graduate' : 'Not set')}
+                    </Text>
+                  )}
+                </View>
+                
+                <View style={[styles.infoRow, { zIndex: 2000 }]}>
+                  <Text style={styles.infoLabel}>Location Type:</Text>
+                  {isEditing ? (
+                    <View style={styles.pickerContainer}>
+                      <DropDownPicker
+                        open={locationTypeOpen}
+                        value={locationType}
+                        items={locationTypeItems}
+                        setOpen={(open) => {
+                          if (open) closeAllDropdowns('locationType');
+                          setLocationTypeOpen(open);
+                        }}
+                        setValue={setLocationType}
+                        placeholder="Select Location Type"
+                        style={styles.dropdown}
+                        dropDownContainerStyle={styles.dropdownContainer}
+                        textStyle={styles.dropdownText}
+                        zIndex={2000}
+                        zIndexInverse={3000}
+                        listMode="SCROLLVIEW"
+                        scrollViewProps={{
+                          nestedScrollEnabled: true,
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <Text style={styles.infoValue}>
+                      {loading ? 'Loading...' : (locationType === 'on-campus' ? 'On Campus' : locationType === 'off-campus' ? 'Off Campus' : 'Not set')}
+                    </Text>
+                  )}
+                </View>
+
+                {/* On Campus Options */}
+                {isEditing && locationType === 'on-campus' && (
+                  <>
+                    <View style={[styles.infoRow, { zIndex: 1000 }]}>
+                      <Text style={styles.infoLabel}>Campus Area:</Text>
+                      <View style={styles.pickerContainer}>
+                        <DropDownPicker
+                          open={campusAreaOpen}
+                          value={campusArea}
+                          items={campusAreaItems}
+                          setOpen={(open) => {
+                            if (open) closeAllDropdowns('campusArea');
+                            setCampusAreaOpen(open);
+                          }}
+                          setValue={setCampusArea}
+                          placeholder="Select Area"
+                          style={styles.dropdown}
+                          dropDownContainerStyle={styles.dropdownContainer}
+                          textStyle={styles.dropdownText}
+                          zIndex={1000}
+                          zIndexInverse={4000}
+                          listMode="SCROLLVIEW"
+                          scrollViewProps={{
+                            nestedScrollEnabled: true,
+                          }}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.infoRow}>
+                      <Text style={styles.infoLabel}>Building:</Text>
+                      <TextInput
+                        style={styles.infoInput}
+                        value={buildingName}
+                        onChangeText={setBuildingName}
+                        placeholder="Building Name"
+                        autoCapitalize="words"
+                      />
+                    </View>
+                  </>
+                )}
+
+                {/* Off Campus Options */}
+                {isEditing && locationType === 'off-campus' && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Apartment:</Text>
+                    <TextInput
+                      style={styles.infoInput}
+                      value={apartmentName}
+                      onChangeText={setApartmentName}
+                      placeholder="Apartment Name"
+                      autoCapitalize="words"
+                    />
+                  </View>
+                )}
+
+                {/* Display Location Info when not editing */}
+                {!isEditing && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Location:</Text>
+                    <Text style={styles.infoValue}>
+                      {loading ? 'Loading...' : (
+                        locationType === 'on-campus' 
+                          ? `On Campus - ${campusArea === 'middle-earth' ? 'Middle Earth' : campusArea === 'mesa-court' ? 'Mesa Court' : ''} - ${buildingName || ''}`
+                          : locationType === 'off-campus'
+                          ? `Off Campus - ${apartmentName || ''}`
+                          : 'Not set'
+                      )}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Marketplace Stats */}
+              <TouchableOpacity activeOpacity={1} style={styles.section}>
+                <Text style={styles.sectionTitle}>Marketplace Stats</Text>
+                <View style={styles.statsRow}>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statNumber}>{listingsCount}</Text>
+                    <Text style={styles.statLabel}>Listings</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statNumber}>{soldCount}</Text>
+                    <Text style={styles.statLabel}>Sold</Text>
+                  </View>
+                  <View style={styles.statBox}>
+                    <Text style={styles.statNumber}>{boughtCount}</Text>
+                    <Text style={styles.statLabel}>Bought</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Edit Profile & Change Password */}
+              <View style={styles.section}>
+                {isEditing ? (
+                  <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+                      <Text style={styles.editButtonText}>Edit Profile</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.changePasswordButton} onPress={() => setShowPasswordForm(!showPasswordForm)}>
+                      <Text style={styles.changePasswordText}>Change Password</Text>
+                    </TouchableOpacity>
+                    {showPasswordForm && (
+                      <View style={styles.passwordForm}>
+                        <TextInput
+                          style={styles.infoInput}
+                          value={currentPassword}
+                          onChangeText={setCurrentPassword}
+                          placeholder="Current Password"
+                          secureTextEntry
+                        />
+                        <TextInput
+                          style={styles.infoInput}
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          placeholder="New Password"
+                          secureTextEntry
+                        />
+                        <TextInput
+                          style={styles.infoInput}
+                          value={confirmPassword}
+                          onChangeText={setConfirmPassword}
+                          placeholder="Confirm New Password"
+                          secureTextEntry
+                        />
+                        <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword}>
+                          <Text style={styles.saveButtonText}>Save Password</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    <TouchableOpacity style={styles.settingsButton} onPress={handleAdditionalSettings}>
+                      <Text style={styles.settingsText}>Additional Settings</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+
+              {/* Logout */}
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
+      
+      {/* Navigation Bar - Outside ScrollView */}
+      <SafeAreaView edges={['bottom']} style={styles.safeContainer2}>
         <CustomNavBar />
       </SafeAreaView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  keyboardContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  container: {
     paddingTop: 24,
     paddingHorizontal: 24,
     backgroundColor: '#f8f9fa',
     alignItems: 'center',
   },
   safeContainer2: {
-      backgroundColor: '#0C2340',
+    backgroundColor: '#0C2340',
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'flex-start',
-    paddingBottom: 100, // Gives room above navBar
+    paddingBottom: 20,
   },  
   headerSection: {
     alignItems: 'center',
@@ -586,6 +682,19 @@ const styles = StyleSheet.create({
   pickerContainer: {
     flex: 1,
     marginLeft: 8,
+  },
+  dropdown: {
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+    minHeight: 40,
+  },
+  dropdownContainer: {
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: '#495057',
   },
   statsRow: {
     flexDirection: 'row',
@@ -677,51 +786,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   navBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        height: 50,
-        backgroundColor: '#0C2340',
-        borderTopWidth: 1,
-        borderTopColor: '#10253dff',
-        
-    },
-    navItem: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    navText: {
-        fontSize: 26,
-        color: '#444',
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-});
-
-const pickerSelectStyles = StyleSheet.create({
-  inputIOS: {
-    fontSize: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 8,
-    color: '#495057',
-    backgroundColor: '#ffffff',
-    paddingRight: 30, // to ensure the text is never behind the icon
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 50,
+    backgroundColor: '#0C2340',
+    borderTopWidth: 1,
+    borderTopColor: '#10253dff',
   },
-  inputAndroid: {
-    fontSize: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 8,
-    color: '#495057',
-    backgroundColor: '#ffffff',
-    paddingRight: 30, // to ensure the text is never behind the icon
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  placeholder: {
-    color: '#6c757d',
+  navText: {
+    fontSize: 26,
+    color: '#444',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

@@ -24,19 +24,36 @@ import { v4 as uuidv4 } from 'uuid';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
 const IMAGE_HEIGHT = SCREEN_WIDTH; // Square image preview
 
 const AddProductScreen = ({ navigation }) => {
+  const [open, setOpen] = useState(false);
+  const [category, setCategory] = useState(null);
+  const [categoryItems, setCategoryItems] = useState([
+    { label: 'Electronics', value: 'electronics' },
+    { label: 'Books', value: 'books' },
+    { label: 'Clothing', value: 'clothing' },
+    { label: 'Furniture', value: 'furniture' },
+    { label: 'Sports Equipment', value: 'sports' },
+    { label: 'Toys & Games', value: 'toys' },
+    { label: 'Home & Kitchen', value: 'home' },
+    { label: 'Beauty & Personal Care', value: 'beauty' },
+    { label: 'Pet Supplies', value: 'pets' },
+    { label: 'Art & Crafts', value: 'art' },
+    { label: 'Other', value: 'other' },
+  ]);
+  const [image, setImage] = useState(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [desc, setDesc] = useState('');
-  const [image, setImage] = useState(null);
-  const [inputHeight, setInputHeight] = useState(80);
-  const [isLoading, setIsLoading] = useState(false);
+  const [inputHeight, setInputHeight] = useState(100);
   const [showCropInstructions, setShowCropInstructions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const pickAndCropImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -54,21 +71,19 @@ const AddProductScreen = ({ navigation }) => {
 
     if (!result.canceled) {
       try {
-        // Show crop instructions
         setShowCropInstructions(true);
         
-        // Manipulate the image
+        // Optimize image size
         const manipulatedImage = await ImageManipulator.manipulateAsync(
           result.assets[0].uri,
           [
-            { resize: { width: 1000 } }, // Resize to a reasonable size while maintaining aspect ratio
+            { resize: { width: 600, height: 600 } }, // Fixed size for consistent results
           ],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+          { compress: 1, format: ImageManipulator.SaveFormat.JPEG }
         );
         
         setImage(manipulatedImage.uri);
         
-        // Hide instructions after 3 seconds
         setTimeout(() => {
           setShowCropInstructions(false);
         }, 3000);
@@ -96,17 +111,14 @@ const AddProductScreen = ({ navigation }) => {
 
     try {
       if (image) {
-        const response = await fetch(image);
-        const blob = await response.blob();
-        const imageRef = ref(storage, `listingImages/${uuidv4()}`);
-        await uploadBytes(imageRef, blob);
-        imageUrl = await getDownloadURL(imageRef);
+        imageUrl = await uploadToCloudinary(image);
       }
 
       const docRef = await addDoc(collection(db, 'listings'), {
         name,
         price: parseFloat(price).toFixed(2),
         desc,
+        category,
         image: imageUrl,
         email: user ? user.email : 'guest@zotstore.com',
         userId: user ? user.uid : null,
@@ -129,6 +141,11 @@ const AddProductScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{flex: 1 }}
+        // keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      >
       <SafeAreaView edges={['top']} style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity 
@@ -141,15 +158,12 @@ const AddProductScreen = ({ navigation }) => {
           <View style={styles.headerRight} />
         </View>
       </SafeAreaView>
-
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
+      
+      
         <ScrollView 
           style={styles.content} 
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity 
             style={[styles.imageUpload, { height: IMAGE_HEIGHT }]}
@@ -229,11 +243,42 @@ const AddProductScreen = ({ navigation }) => {
                 onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height)}
               />
             </View>
+
+            <View style={[styles.inputContainer]}>
+              <Text style={styles.label}>Category</Text>
+              <View style={{ paddingBottom: 60 }}>
+              <DropDownPicker
+                open={open}
+                value={category}
+                items={categoryItems}
+                setOpen={setOpen}
+                setValue={setCategory}
+                setItems={setCategoryItems}
+                placeholder="Select a category..."
+                style={{
+                  backgroundColor: '#F8F9FA',
+                  borderRadius: 8,
+                  borderColor: '#ccc',
+                }}
+                dropDownContainerStyle={{
+                  backgroundColor: '#F8F9FA',
+                  borderColor: '#ccc',
+                }}
+                textStyle={{
+                  fontSize: 16,
+                  color: '#333',
+                }}
+                listMode="SCROLLVIEW"
+              />
+              </View>
+            </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+        
+      
 
-      <SafeAreaView edges={['bottom']} style={styles.footer}>
+      <SafeAreaView edges={['bottom']} style={[styles.footer]}>
         <TouchableOpacity 
           style={[
             styles.submitButton,
@@ -252,6 +297,7 @@ const AddProductScreen = ({ navigation }) => {
           <Text style={styles.loadingText}>Posting your listing...</Text>
         </View>
       )}
+      
     </View>
   );
 };
@@ -364,6 +410,14 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
     paddingTop: 12,
+  },
+  pickerInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#333',
   },
   footer: {
     backgroundColor: '#fff',

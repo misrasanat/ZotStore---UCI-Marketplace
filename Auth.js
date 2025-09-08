@@ -34,9 +34,9 @@ export default function Auth({ navigation }) {
         </Text>
       </View>
       <View style={styles.centerSection}>
-        <TouchableOpacity style={styles.ssoButton} onPress={handleUCISSOLogin}>
+        {/* <TouchableOpacity style={styles.ssoButton} onPress={handleUCISSOLogin}>
           <Text style={styles.ssoButtonText}>Login with UCI SSO</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity style={styles.emailButton} onPress={handleEmailLogin}>
           <Text style={styles.emailButtonText}>Login with Email</Text>
         </TouchableOpacity>
