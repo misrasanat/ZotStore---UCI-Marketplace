@@ -11,7 +11,8 @@ import {
   ActivityIndicator, 
   Dimensions,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -26,12 +27,26 @@ import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { uploadToCloudinary } from '../utils/cloudinary';
+import { useAuth } from '../AuthContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
 const IMAGE_HEIGHT = SCREEN_WIDTH; // Square image preview
 
 const AddProductScreen = ({ navigation }) => {
+  const { userProfile } = useAuth();
+
+  // Redirect non-UCI users if they somehow access this screen
+  useEffect(() => {
+    if (!userProfile?.isUCIStudent) {
+      Alert.alert(
+        'Access Denied',
+        'Only UCI students can create listings.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    }
+  }, []);
+
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState(null);
   const [categoryItems, setCategoryItems] = useState([

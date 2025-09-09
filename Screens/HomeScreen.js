@@ -15,6 +15,7 @@ const HomeScreen = ({ navigation, route }) => {
     const [filterVisible, setFilterVisible] = useState(false);
     const [selectedCategories, setSelectedCategories] = useState([]); // Replace selectedCategory state
     const { userProfile } = useAuth();
+    const isUCIStudent = userProfile?.isUCIStudent;
 
     const categories = [
         { label: 'All Categories', value: null },
@@ -194,17 +195,20 @@ const HomeScreen = ({ navigation, route }) => {
                         />
                         )}
                     </View>
-                    <View style={styles.floatingActionRow}>
-                        <TouchableOpacity
-                        style={styles.messageButton}
-                        onPress={() => navigation.navigate('AddProduct')}
-                        >
-                        <View style={styles.sellButtonContainer}>
-                            <Feather name="plus" size={20} color="#fff" />
-                            <Text style={styles.sellButtonText}>Sell Item</Text>
+                    {/* Only show sell button for UCI students */}
+                    {isUCIStudent && (
+                        <View style={styles.floatingActionRow}>
+                            <TouchableOpacity
+                                style={styles.messageButton}
+                                onPress={() => navigation.navigate('AddProduct')}
+                            >
+                                <View style={styles.sellButtonContainer}>
+                                    <Feather name="plus" size={20} color="#fff" />
+                                    <Text style={styles.sellButtonText}>Sell Item</Text>
+                                </View>
+                            </TouchableOpacity>
                         </View>
-                        </TouchableOpacity>
-                    </View>
+                    )}
                     <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
                         <CustomNavBar />
                     </SafeAreaView>

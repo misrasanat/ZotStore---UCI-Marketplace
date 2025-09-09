@@ -21,6 +21,7 @@ import LeaveReviewScreen from './Screens/LeaveReviewScreen';
 import AllReviewsScreen from './Screens/AllReviewsScreen';
 import OtherUserListingsScreen from './Screens/OtherUserListingsScreen.js';
 import SettingsScreen from './Screens/SettingsScreen.js';
+import SignupNonUCI from './SignupNonUCI';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UnreadProvider } from './UnreadContext';
@@ -59,6 +60,7 @@ function Navigation() {
             <Stack.Screen name="Signup" component={Signup} />
             <Stack.Screen name="SignupProfile" component={Signup2} />
             <Stack.Screen name="OTPVerification" component={OTPVerification} />
+            <Stack.Screen name="SignupNonUCI" component={SignupNonUCI} />
           </>
         )}
       </Stack.Navigator>
