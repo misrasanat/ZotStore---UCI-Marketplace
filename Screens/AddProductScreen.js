@@ -37,7 +37,7 @@ const AddProductScreen = ({ navigation }) => {
   const [categoryItems, setCategoryItems] = useState([
     { label: 'Electronics', value: 'electronics' },
     { label: 'Books', value: 'books' },
-    { label: 'Clothing', value: 'clothing' },
+    { label: 'Accessories', value: 'accessories' }, // Changed from clothing
     { label: 'Furniture', value: 'furniture' },
     { label: 'Sports Equipment', value: 'sports' },
     { label: 'Toys & Games', value: 'toys' },
