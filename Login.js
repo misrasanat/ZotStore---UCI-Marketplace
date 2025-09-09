@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { auth, signInWithEmailAndPassword, sendEmailVerification } from './firebase';
-import { reload } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
-export default function Login({ navigation }) {
+const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,74 +20,56 @@ export default function Login({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
-      return;
-    }
-
-    if (!validateUCIEmail(email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid UCI email address (@uci.edu).');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Invalid Password', 'Password must be at least 6 characters long.');
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setLoading(true);
-
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log('User logged in:', user.uid);
-      
-      // Reload user to get latest email verification status
-      await reload(user);
-      console.log('Email verification status:', user.emailVerified);
-      
-      // Skip verification check for test account
-      if (!user.emailVerified && !isTestAccount(email)) {
+
+      // Check if it's a UCI email
+      const isUCIEmail = email.toLowerCase().endsWith('@uci.edu');
+
+      if (isUCIEmail && !user.emailVerified) {
+        await auth.signOut();
         Alert.alert(
-          'Email Not Verified', 
-          'Please check your email and verify your account before logging in. If you have already verified your email, try logging in again.',
+          'Email Not Verified',
+          'Please verify your UCI email before logging in.',
           [
             {
               text: 'Resend Verification',
               onPress: async () => {
                 try {
                   await sendEmailVerification(user);
-                  Alert.alert('Verification Email Sent', 'Please check your inbox.');
+                  Alert.alert('Success', 'Verification email sent!');
                 } catch (error) {
-                  console.error('Error sending verification email:', error);
-                  Alert.alert('Error', 'Failed to send verification email. Please try again.');
+                  Alert.alert('Error', 'Could not send verification email.');
                 }
-              }
+              },
             },
-            {
-              text: 'OK',
-              style: 'cancel'
-            }
+            { text: 'OK' },
           ]
         );
+        setLoading(false);
         return;
       }
+
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
       
-      // Email is verified or test account, let AuthContext handle the routing
-      
-    } catch (error) {
-      console.error('Error logging in:', error);
-      let errorMessage = 'Failed to log in. Please try again.';
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
+      if (!userDoc.exists()) {
+        await auth.signOut();
+        Alert.alert('Error', 'User profile not found');
+        return;
       }
-      Alert.alert('Error', errorMessage);
-    } finally {
+
+      // Let AuthContext handle the navigation
+      setLoading(false);
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Error', error.message);
       setLoading(false);
     }
   };
@@ -229,3 +212,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+export default Login;

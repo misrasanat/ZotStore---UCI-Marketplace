@@ -41,7 +41,13 @@ export default function Auth({ navigation }) {
           <Text style={styles.emailButtonText}>Login with Email</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.signupButton} onPress={handleEmailSignup}>
-          <Text style={styles.signupButtonText}>Create New Account</Text>
+          <Text style={styles.signupButtonText}>Create Account (UCI)</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.signupButton, styles.nonUCIButton]} 
+          onPress={() => navigation.navigate('SignupNonUCI')}
+        >
+          <Text style={styles.signupButtonText}>Create Account (Non-UCI)</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.footerAccent} />
@@ -150,6 +156,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  nonUCIButton: {
+    backgroundColor: '#666',
+    marginTop: 10,
   },
   signupButtonText: {
     color: '#fff',
