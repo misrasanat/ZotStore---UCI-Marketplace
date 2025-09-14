@@ -1,10 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../ThemeContext';
 
 const MessageBubble = ({ text, fromSelf }) => {
+  const { colors } = useTheme();
+  
   return (
-    <View style={[styles.bubble, fromSelf ? styles.self : styles.other]}>
-      <Text style={[styles.text, fromSelf && { color: '#fff' }]}>{text}</Text>
+    <View style={[
+      styles.bubble, 
+      fromSelf ? 
+        [styles.self, { backgroundColor: colors.primary }] : 
+        [styles.other, { backgroundColor: colors.surface }]
+    ]}>
+      <Text style={[
+        styles.text, 
+        { color: fromSelf ? colors.textLight : colors.text }
+      ]}>{text}</Text>
     </View>
   );
 };

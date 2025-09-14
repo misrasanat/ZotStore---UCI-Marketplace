@@ -24,6 +24,7 @@ import SettingsScreen from './Screens/SettingsScreen.js';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UnreadProvider } from './UnreadContext';
+import { ThemeProvider } from './ThemeContext';
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
@@ -69,10 +70,12 @@ function Navigation() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <UnreadProvider>
-        <Navigation />
-      </UnreadProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <UnreadProvider>
+          <Navigation />
+        </UnreadProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

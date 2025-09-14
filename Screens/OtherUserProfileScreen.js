@@ -6,10 +6,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 
 const OtherUserProfileScreen = ({ navigation, route }) => {
   const { userId } = route.params;
   const { user: currentUser, userProfile } = useAuth();
+  const { colors } = useTheme();
   const [profileUser, setProfileUser] = useState(null);
   const [listings, setListings] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -163,54 +165,54 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   );
   
   const renderListing = ({ item }) => (
-    <TouchableOpacity
-      style={styles.listingCard}
+    <TouchableOpacity 
+      style={[styles.listingCard, { backgroundColor: colors.surface }]} 
       onPress={() => navigation.navigate('View Listing', { item })}
     >
       <Image source={{ uri: item.image }} style={styles.listingImage} />
       <View style={styles.listingInfo}>
-        <Text style={styles.listingName}>{item.name}</Text>
-        <Text style={styles.listingPrice}>${item.price}</Text>
+        <Text style={[styles.listingName, { color: colors.text }]}>{item.name}</Text>
+        <Text style={[styles.listingPrice, { color: colors.price }]}>${item.price}</Text>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.screenWrapper}>
-      <SafeAreaView edges={['top']} style={styles.safeTop}>
+    <View style={[styles.screenWrapper, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.safeTop, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={24} color="#0C2340" />
+          <Icon name="arrow-left" size={24} color={colors.primary} />
         </TouchableOpacity>
       </SafeAreaView>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
         {/* Profile Info */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { backgroundColor: colors.card }]}>
           {profileUser ? ( // Changed from 'user' to 'profileUser'
             <>
               <Image 
                 source={{ uri: profileUser.profilePic || 'https://i.pravatar.cc/150?img=12' }} 
                 style={styles.avatar} 
               />
-              <Text style={styles.name}>{profileUser.name}</Text>
-              <Text style={styles.email}>{profileUser.email}</Text>
-              <Text style={styles.joined}>
+              <Text style={[styles.name, { color: colors.text }]}>{profileUser.name}</Text>
+              <Text style={[styles.email, { color: colors.textSecondary }]}>{profileUser.email}</Text>
+              <Text style={[styles.joined, { color: colors.textSecondary }]}>
                 Joined {new Date(profileUser.createdAt?.seconds * 1000).toLocaleDateString()}
               </Text>
             </>
           ) : (
-            <Text>Loading...</Text>
+            <Text style={{ color: colors.text }}>Loading...</Text>
           )}
         </View>
 
         {/* Bio */}
-        <View style={styles.bioBox}>
+        <View style={[styles.bioBox, { backgroundColor: colors.card }]}>
           {profileUser ? (
           <>
-            <Text style={styles.bioHeader}>About</Text>
-            <Text style={styles.bioText}>{profileUser.bio || 'No bio provided.'}</Text>
+            <Text style={[styles.bioHeader, { color: colors.primary }]}>About</Text>
+            <Text style={[styles.bioText, { color: colors.text }]}>{profileUser.bio || 'No bio provided.'}</Text>
           </>
         ) : (
-          <Text>Loading...</Text>
+          <Text style={{ color: colors.text }}>Loading...</Text>
         )}
             
         </View>
@@ -225,8 +227,8 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           // Phone
           const phoneRow = showPhone && profileUser.phone ? (
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Phone</Text>
-              <Text style={styles.infoValue}>{profileUser.phone}</Text>
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Phone</Text>
+              <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{profileUser.phone}</Text>
             </View>
           ) : null;
 
@@ -249,8 +251,8 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
             if (locationText) {
               locationRow = (
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Location</Text>
-                  <Text style={styles.infoValue}>{locationText}</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Location</Text>
+                  <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{locationText}</Text>
                 </View>
               );
             }
@@ -260,8 +262,8 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           if (!phoneRow && !locationRow) return null;
 
           return (
-            <View style={styles.contactBox}>
-              <Text style={styles.sectionHeader}>Contact & Location</Text>
+            <View style={[styles.contactBox, { backgroundColor: colors.card }]}>
+              <Text style={[styles.sectionHeader, { color: colors.primary }]}>Contact & Location</Text>
               {phoneRow}
               {locationRow}
             </View>
@@ -271,28 +273,28 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           {/* Action Buttons */}
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
               onPress={() => navigation.navigate('Chat Screen', { userId })}
             >
-              <Text style={styles.actionText}>📩 Message</Text>
+              <Text style={[styles.actionText, { color: colors.textLight }]}>📩 Message</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
               onPress={() => navigation.navigate('Other User Listings', { userId, userName: profileUser?.name })}
             >
-              <Text style={styles.actionText}>📦 View Listings</Text>
+              <Text style={[styles.actionText, { color: colors.textLight }]}>📦 View Listings</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.reportButton}
+              style={[styles.reportButton, { backgroundColor: colors.error }]}
               onPress={() => setReportModalVisible(true)}
             >
-              <Text style={styles.reportText}>⚠️ Report</Text>
+              <Text style={[styles.reportText, { color: colors.textLight }]}>⚠️ Report</Text>
             </TouchableOpacity>
           </View>
 
           {/* Listings Preview */}
-          <View style={styles.recentListingsSection}>
-          <Text style={styles.sectionHeader}>Recent Listings</Text>
+          <View style={[styles.recentListingsSection, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionHeader, { color: colors.primary }]}>Recent Listings</Text>
           <FlatList
             data={listings}
             keyExtractor={(item) => item.id}
@@ -304,22 +306,22 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           </View>
 
         {/* Reviews section */}
-        <View style={styles.reviewsSection}>
+        <View style={[styles.reviewsSection, { backgroundColor: colors.card }]}>
             <View style={styles.reviewsHeaderRow}>
-                <Text style={styles.sectionHeader2}>Reviews</Text>
+                <Text style={[styles.sectionHeader2, { color: colors.primary }]}>Reviews</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Leave Review', { userId, userName: profileUser?.name })}>
-                    <Text style={styles.leaveReview}>Leave a Review</Text>
+                    <Text style={[styles.leaveReview, { color: colors.primary }]}>Leave a Review</Text>
                 </TouchableOpacity>
             </View>
             
             {reviews.length > 0 ? (
               <>
                 <View style={styles.ratingSummary}>
-                  <Text style={styles.averageRating}>{averageRating.toFixed(1)}</Text>
+                  <Text style={[styles.averageRating, { color: colors.text }]}>{averageRating.toFixed(1)}</Text>
                   <Text style={styles.starsDisplay}>
                     {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))}
                   </Text>
-                  <Text style={styles.totalReviews}>({totalReviews} reviews)</Text>
+                  <Text style={[styles.totalReviews, { color: colors.textSecondary }]}>({totalReviews} reviews)</Text>
                 </View>
                 
                 {reviews.map((review) => (

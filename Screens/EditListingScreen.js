@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import 'react-native-get-random-values';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image, 
-  ScrollView, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ScrollView,
+  ActivityIndicator,
   Dimensions,
   KeyboardAvoidingView,
   Platform
@@ -25,13 +25,160 @@ import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
 import { uploadToCloudinary } from '../utils/cloudinary';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { useTheme } from '../ThemeContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
 const IMAGE_HEIGHT = SCREEN_WIDTH; // Square image preview
 
+const getStyles = (colors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerRight: {
+    width: 32,
+  },
+  content: {
+    flex: 1,
+  },
+  imageUpload: {
+    width: '100%',
+    backgroundColor: colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+  },
+  selectedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  editImageButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+  },
+  imagePlaceholderText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  imagePlaceholderSubtext: {
+    marginTop: 4,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  cropInstructions: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 10,
+    zIndex: 1,
+  },
+  cropInstructionsText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  form: {
+    padding: 16,
+    paddingBottom: 120, // Extra padding to ensure content is visible above keyboard
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: colors.input,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: colors.text,
+  },
+  descInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 12,
+    color: colors.text,
+  },
+  footer: {
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    padding: 16,
+  },
+  submitButton: {
+    backgroundColor: colors.button,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: colors.textSecondary,
+  },
+  submitButtonText: {
+    color: colors.buttonText,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 12,
+  },
+});
+
 const EditListingScreen = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { item } = route.params;
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const [name, setName] = useState(item.name);
   const [price, setPrice] = useState(item.price.toString());
   const [desc, setDesc] = useState(item.desc);
@@ -255,17 +402,17 @@ const EditListingScreen = ({ route, navigation }) => {
                   setValue={setCategory}
                   placeholder="Select a category..."
                   style={{
-                    backgroundColor: '#F8F9FA',
+                    backgroundColor: colors.input,
                     borderRadius: 8,
-                    borderColor: '#ccc',
+                    borderColor: colors.inputBorder,
                   }}
                   dropDownContainerStyle={{
-                    backgroundColor: '#F8F9FA',
-                    borderColor: '#ccc',
+                    backgroundColor: colors.input,
+                    borderColor: colors.inputBorder,
                   }}
                   textStyle={{
                     fontSize: 16,
-                    color: '#333',
+                    color: colors.text,
                   }}
                   listMode="SCROLLVIEW"
                 />
@@ -297,147 +444,5 @@ const EditListingScreen = ({ route, navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#0C2340',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerRight: {
-    width: 32,
-  },
-  content: {
-    flex: 1,
-  },
-  imageUpload: {
-    width: '100%',
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: '100%',
-  },
-  selectedImage: {
-    width: '100%',
-    height: '100%',
-  },
-  editImageButton: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholder: {
-    alignItems: 'center',
-  },
-  imagePlaceholderText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  imagePlaceholderSubtext: {
-    marginTop: 4,
-    fontSize: 12,
-    color: '#999',
-  },
-  cropInstructions: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    padding: 10,
-    zIndex: 1,
-  },
-  cropInstructionsText: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  form: {
-    padding: 16,
-    paddingBottom: 120, // Extra padding to ensure content is visible above keyboard
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-  },
-  descInput: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-  footer: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    padding: 16,
-  },
-  submitButton: {
-    backgroundColor: '#0C2340',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#A0A0A0',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 12,
-  },
-});
 
 export default EditListingScreen;

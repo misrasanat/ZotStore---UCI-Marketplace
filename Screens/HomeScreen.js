@@ -7,12 +7,14 @@ import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestor
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 
 
 const HomeScreen = ({ navigation, route }) => {
     const [items, setItems] = React.useState([]);
     const [searchQuery, setSearchQuery] = React.useState('');
     const { userProfile } = useAuth();
+    const { colors } = useTheme();
     
     const filteredItems = items.filter((item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -35,23 +37,23 @@ const HomeScreen = ({ navigation, route }) => {
     }, []);
     return (
         
-        <View style={styles.container}>
-            <SafeAreaView edges={['top']} style={styles.safeContainer}>
-            <View style={styles.topSection}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <SafeAreaView edges={['top']} style={[styles.safeContainer, { backgroundColor: colors.background }]}>
+            <View style={[styles.topSection, { backgroundColor: colors.background }]}>
                 {/* Search Bar and Profile */}
                 <View style={styles.searchBarContainer}>
-                    <View style={styles.searchContainer}>
-                        <Feather name="search" size={20} color="#000" style={styles.searchIcon} />
+                    <View style={[styles.searchContainer, { backgroundColor: colors.searchBackground, borderColor: colors.searchBorder }]}>
+                        <Feather name="search" size={20} color={colors.text} style={styles.searchIcon} />
                         <TextInput
-                            style={styles.searchBar}
+                            style={[styles.searchBar, { color: colors.text }]}
                             placeholder="Search ZotStore"
-                            placeholderTextColor="#000"
+                            placeholderTextColor={colors.placeholder}
                             value={searchQuery}
                             onChangeText={text => setSearchQuery(text)}
                         />
                     </View>
                     <TouchableOpacity 
-                        style={styles.profileButton}
+                        style={[styles.profileButton, { backgroundColor: colors.primary }]}
                         onPress={() => navigation.navigate('Profile')}
                     >
                         {userProfile?.profilePic ? (
@@ -60,7 +62,7 @@ const HomeScreen = ({ navigation, route }) => {
                                 style={{ width: '100%', height: '100%', borderRadius: 22 }}
                             />
                         ) : (
-                            <Feather name="user" size={24} color="#fff" />
+                            <Feather name="user" size={24} color={colors.textLight} />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -75,17 +77,17 @@ const HomeScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
                 </View> */}
             </View>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
             </SafeAreaView>
             
             
 
                 <View style={{ flex: 1}}>
-                <View style={styles.container2}>
+                <View style={[styles.container2, { backgroundColor: colors.background }]}>
 
                     {/* Item Listings */}
                     {items.length === 0 ? (
-                        <Text style={styles.noListings}>No current Listings</Text>
+                        <Text style={[styles.noListings, { color: colors.noListings }]}>No current Listings</Text>
                     ) : (
                         <FlatList
                             data={filteredItems}
@@ -99,7 +101,7 @@ const HomeScreen = ({ navigation, route }) => {
                             }}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
-                                    style={styles.card}
+                                    style={[styles.card, { backgroundColor: colors.cardBackground }]}
                                     onPress={() => {
                                         navigation.navigate('View Listing', { item });
                                         // navigation.navigate('ItemDetail', { item }); // optional: hook to details screen
@@ -116,16 +118,16 @@ const HomeScreen = ({ navigation, route }) => {
                                         resizeMode="cover"
                                         />
                                     ) : (
-                                        <View style={styles.imagePlaceholder}>
-                                            <Text style={styles.placeholderText}>N/A</Text>
+                                        <View style={[styles.imagePlaceholder, { backgroundColor: colors.surface }]}>
+                                            <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>N/A</Text>
                                         </View>
                                             
                                     )}
                                     </View>
 
                                     {/* Bottom flexible section */}
-                                    <Text style={styles.name}>{item.name}</Text>
-                                    <Text style={styles.price}>${item.price}</Text>
+                                    <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+                                    <Text style={[styles.price, { color: colors.price }]}>${item.price}</Text>
                                 </TouchableOpacity> 
                                 )}
                         />
@@ -133,16 +135,16 @@ const HomeScreen = ({ navigation, route }) => {
                     </View>
                     <View style={styles.floatingActionRow}>
                         <TouchableOpacity
-                        style={styles.messageButton}
+                        style={[styles.messageButton, { backgroundColor: colors.primary }]}
                         onPress={() => navigation.navigate('AddProduct')}
                         >
                         <View style={styles.sellButtonContainer}>
-                            <Feather name="plus" size={20} color="#fff" />
-                            <Text style={styles.sellButtonText}>Sell Item</Text>
+                            <Feather name="plus" size={20} color={colors.textLight} />
+                            <Text style={[styles.sellButtonText, { color: colors.textLight }]}>Sell Item</Text>
                         </View>
                         </TouchableOpacity>
                     </View>
-                    <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+                    <SafeAreaView  edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary }]}>
                         <CustomNavBar />
                     </SafeAreaView>
                     </View>

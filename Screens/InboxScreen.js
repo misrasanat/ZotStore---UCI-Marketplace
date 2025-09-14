@@ -16,6 +16,7 @@ import { useUnread } from '../UnreadContext'; // adjust path as needed
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
+import { useTheme } from '../ThemeContext';
 
 const formatMessageTimestamp = (timestamp) => {
   if (!timestamp) return 'now';
@@ -62,10 +63,11 @@ const InboxScreen = ({ navigation }) => {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const { refreshUnreadStatus } = useUnread();
+  const { colors } = useTheme();
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { backgroundColor: colors.card }]}
       onPress={async () => {
         const auth = getAuth();
         const currentUser = auth.currentUser;
@@ -83,8 +85,8 @@ const InboxScreen = ({ navigation }) => {
         {item.avatar ? (
           <Image source={{ uri: item.avatar }} style={styles.avatar} />
         ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarFallbackText}>
+          <View style={[styles.avatarFallback, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.avatarFallbackText, { color: colors.textLight }]}>
               {item.user.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -94,14 +96,16 @@ const InboxScreen = ({ navigation }) => {
         <View style={styles.topRow}>
           <Text style={[
             styles.username,
+            { color: colors.text },
             item.unreadCount > 0 && styles.unreadText
           ]} numberOfLines={1}>{item.user}</Text>
-          <Text style={styles.time}>{item.timestamp}</Text>
+          <Text style={[styles.time, { color: colors.textSecondary }]}>{item.timestamp}</Text>
         </View>
         <View style={styles.messageRow}>
           <Text 
             style={[
               styles.message,
+              { color: colors.textSecondary },
               item.unreadCount > 0 && styles.unreadText
             ]} 
             numberOfLines={1}
@@ -109,8 +113,8 @@ const InboxScreen = ({ navigation }) => {
             {item.lastMessage || 'No messages yet'}
           </Text>
           {item.unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
+            <View style={[styles.badge, { backgroundColor: colors.error }]}>
+              <Text style={[styles.badgeText, { color: colors.textLight }]}>
                 {item.unreadCount}
               </Text>
             </View>
@@ -187,20 +191,20 @@ const InboxScreen = ({ navigation }) => {
   const { hasUnread } = useUnread();
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
       </SafeAreaView>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0C2340" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : conversations.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Feather name="message-circle" size={50} color="#999" />
-          <Text style={styles.emptyText}>No conversations yet</Text>
-          <Text style={styles.emptySubtext}>
+          <Feather name="message-circle" size={50} color={colors.textSecondary} />
+          <Text style={[styles.emptyText, { color: colors.text }]}>No conversations yet</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             Your messages with other users will appear here
           </Text>
         </View>
@@ -215,7 +219,7 @@ const InboxScreen = ({ navigation }) => {
         />
       )}
 
-      <SafeAreaView edges={['bottom']} style={styles.footer}>
+      <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.primary }]}>
         <CustomNavBar />
       </SafeAreaView>
     </View>

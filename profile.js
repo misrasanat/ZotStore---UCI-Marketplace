@@ -10,6 +10,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './Screens/CustomNavbar.js';
 import { uploadToCloudinary } from './utils/cloudinary';
+import { useTheme } from './ThemeContext';
 
 export default function Profile({ navigation }) {
   const [profilePic, setProfilePic] = useState(null);
@@ -65,6 +66,7 @@ export default function Profile({ navigation }) {
   const user = auth.currentUser;
   const uid = user?.uid;
   const userRef = doc(db, 'users', uid);
+  const { colors } = useTheme();
 
   // Close all dropdowns when one opens
   const closeAllDropdowns = (except) => {
@@ -226,14 +228,14 @@ export default function Profile({ navigation }) {
   };
 
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
       <TouchableWithoutFeedback onPress={() => {
         Keyboard.dismiss();
         closeAllDropdowns();
       }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardContainer}
+          style={[styles.keyboardContainer, { backgroundColor: colors.background }]}
           // keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
         >
           <ScrollView
@@ -250,7 +252,7 @@ export default function Profile({ navigation }) {
               contentContainerStyle={{ paddingBottom: 100 }}
               nestedScrollEnabled={true}  // ✅ Add this
           >
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
               {/* Profile Picture & Name */}
               <View style={styles.headerSection}>
                 <TouchableOpacity onPress={pickImage}>
@@ -259,69 +261,73 @@ export default function Profile({ navigation }) {
                     style={styles.avatar}
                     defaultSource={require('./assets/icon.png')}
                   />
-                  {isEditing && <Text style={styles.editPhotoText}>Edit Photo</Text>}
+                  {isEditing && <Text style={[styles.editPhotoText, { color: colors.text }]}>Edit Photo</Text>}
                 </TouchableOpacity>
                 {isEditing ? (
                   <TextInput
-                    style={styles.nameInput}
+                    style={[styles.nameInput, { color: colors.text, backgroundColor: colors.input, borderColor: colors.inputBorder }]}
                     value={name}
                     onChangeText={setName}
                     placeholder="Full Name"
+                    placeholderTextColor={colors.placeholder}
                   />
                 ) : (
-                  <Text style={styles.name}>{loading ? 'Loading...' : (name || 'No name set')}</Text>
+                  <Text style={[styles.name, { color: colors.text }]}>{loading ? 'Loading...' : (name || 'No name set')}</Text>
                 )}
-                <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
+                <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email || 'Loading...'}</Text>
               </View>
 
               {/* Account Info */}
-              <TouchableOpacity activeOpacity={1} style={[styles.section]}>
-                <Text style={styles.sectionTitle}>Account Info</Text>
+              <TouchableOpacity activeOpacity={1} style={[styles.section, { backgroundColor: colors.card }]}>
+                <Text style={[styles.sectionTitle, { color: colors.primary }]}>Account Info</Text>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Phone:</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Phone:</Text>
                   {isEditing ? (
                     <TextInput
-                      style={styles.infoInput}
+                      style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                       value={phone}
                       onChangeText={setPhone}
                       placeholder="Phone Number"
+                      placeholderTextColor={colors.placeholder}
                       keyboardType="phone-pad"
                     />
                   ) : (
-                    <Text style={styles.infoValue}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
                   )}
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Bio:</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Bio:</Text>
                   {isEditing ? (
                     <TextInput
-                      style={[styles.infoInput, { height: 60 }]}
+                      style={[styles.infoInput, { height: 60, backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                       value={bio}
                       onChangeText={setBio}
                       placeholder="Short bio"
+                      placeholderTextColor={colors.placeholder}
                       multiline
                     />
                   ) : (
-                    <Text style={styles.infoValue}>{loading ? 'Loading...' : (bio)}</Text>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{loading ? 'Loading...' : (bio)}</Text>
                   )}
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Major:</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Major:</Text>
                   {isEditing ? (
                     <TextInput
-                      style={styles.infoInput}
+                      style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                       value={major}
                       onChangeText={setMajor}
                       placeholder="Major"
+                      placeholderTextColor={colors.placeholder}
                       autoCapitalize="words"
                     />
                   ) : (
-                    <Text style={styles.infoValue}>{loading ? 'Loading...' : (major || 'Not set')}</Text>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{loading ? 'Loading...' : (major || 'Not set')}</Text>
                   )}
                 </View>
 
                 <View style={[styles.infoRow, { zIndex: 4000 }]}>
-                  <Text style={styles.infoLabel}>Year:</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Year:</Text>
                   {isEditing ? (
                     <View style={styles.pickerContainer}>
                       <DropDownPicker
@@ -346,14 +352,14 @@ export default function Profile({ navigation }) {
                       />
                     </View>
                   ) : (
-                    <Text style={styles.infoValue}>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
                       {loading ? 'Loading...' : (year ? `${year}${year === '1' ? 'st' : year === '2' ? 'nd' : year === '3' ? 'rd' : 'th'} Year` : 'Not set')}
                     </Text>
                   )}
                 </View>
 
                 <View style={[styles.infoRow, { zIndex: studentTypeOpen ? 3000 : 0 }]}>
-                  <Text style={styles.infoLabel}>Student Type:</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Student Type:</Text>
                   {isEditing ? (
                     <View style={styles.pickerContainer}>
                       <DropDownPicker
@@ -378,14 +384,14 @@ export default function Profile({ navigation }) {
                       />
                     </View>
                   ) : (
-                    <Text style={styles.infoValue}>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
                       {loading ? 'Loading...' : (studentType === 'undergrad' ? 'Undergraduate' : studentType === 'grad' ? 'Graduate' : 'Not set')}
                     </Text>
                   )}
                 </View>
                 
                 <View style={[styles.infoRow, { zIndex: 2000 }]}>
-                  <Text style={styles.infoLabel}>Location Type:</Text>
+                  <Text style={[styles.infoLabel, { color: colors.text }]}>Location Type:</Text>
                   {isEditing ? (
                     <View style={styles.pickerContainer}>
                       <DropDownPicker
@@ -410,7 +416,7 @@ export default function Profile({ navigation }) {
                       />
                     </View>
                   ) : (
-                    <Text style={styles.infoValue}>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
                       {loading ? 'Loading...' : (locationType === 'on-campus' ? 'On Campus' : locationType === 'off-campus' ? 'Off Campus' : 'Not set')}
                     </Text>
                   )}
@@ -420,7 +426,7 @@ export default function Profile({ navigation }) {
                 {isEditing && locationType === 'on-campus' && (
                   <>
                     <View style={[styles.infoRow, { zIndex: 1000 }]}>
-                      <Text style={styles.infoLabel}>Campus Area:</Text>
+                      <Text style={[styles.infoLabel, { color: colors.text }]}>Campus Area:</Text>
                       <View style={styles.pickerContainer}>
                         <DropDownPicker
                           open={campusAreaOpen}
@@ -445,12 +451,13 @@ export default function Profile({ navigation }) {
                       </View>
                     </View>
                     <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Building:</Text>
+                      <Text style={[styles.infoLabel, { color: colors.text }]}>Building:</Text>
                       <TextInput
-                        style={styles.infoInput}
+                        style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                         value={buildingName}
                         onChangeText={setBuildingName}
                         placeholder="Building Name"
+                        placeholderTextColor={colors.placeholder}
                         autoCapitalize="words"
                       />
                     </View>
@@ -460,12 +467,13 @@ export default function Profile({ navigation }) {
                 {/* Off Campus Options */}
                 {isEditing && locationType === 'off-campus' && (
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Apartment:</Text>
+                    <Text style={[styles.infoLabel, { color: colors.text }]}>Apartment:</Text>
                     <TextInput
-                      style={styles.infoInput}
+                      style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                       value={apartmentName}
                       onChangeText={setApartmentName}
                       placeholder="Apartment Name"
+                      placeholderTextColor={colors.placeholder}
                       autoCapitalize="words"
                     />
                   </View>
@@ -474,8 +482,8 @@ export default function Profile({ navigation }) {
                 {/* Display Location Info when not editing */}
                 {!isEditing && (
                   <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Location:</Text>
-                    <Text style={styles.infoValue}>
+                    <Text style={[styles.infoLabel, { color: colors.text }]}>Location:</Text>
+                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
                       {loading ? 'Loading...' : (
                         locationType === 'on-campus' 
                           ? `On Campus - ${campusArea === 'middle-earth' ? 'Middle Earth' : campusArea === 'mesa-court' ? 'Mesa Court' : ''} - ${buildingName || ''}`
@@ -489,76 +497,79 @@ export default function Profile({ navigation }) {
               </TouchableOpacity>
 
               {/* Marketplace Stats */}
-              <TouchableOpacity activeOpacity={1} style={styles.section}>
-                <Text style={styles.sectionTitle}>Marketplace Stats</Text>
+              <TouchableOpacity activeOpacity={1} style={[styles.section, { backgroundColor: colors.card }]}>
+                <Text style={[styles.sectionTitle, { color: colors.primary }]}>Marketplace Stats</Text>
                 <View style={styles.statsRow}>
                   <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{listingsCount}</Text>
-                    <Text style={styles.statLabel}>Listings</Text>
+                    <Text style={[styles.statNumber, { color: colors.text }]}>{listingsCount}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Listings</Text>
                   </View>
                   <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{soldCount}</Text>
-                    <Text style={styles.statLabel}>Sold</Text>
+                    <Text style={[styles.statNumber, { color: colors.text }]}>{soldCount}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Sold</Text>
                   </View>
                   <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{boughtCount}</Text>
-                    <Text style={styles.statLabel}>Bought</Text>
+                    <Text style={[styles.statNumber, { color: colors.text }]}>{boughtCount}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Bought</Text>
                   </View>
                 </View>
               </TouchableOpacity>
 
               {/* Edit Profile & Change Password */}
-              <View style={styles.section}>
+              <View style={[styles.section, { backgroundColor: colors.card }]}>
                 {isEditing ? (
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>Save Changes</Text>
+                  <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave}>
+                    <Text style={[styles.saveButtonText, { color: colors.textLight }]}>Save Changes</Text>
                   </TouchableOpacity>
                 ) : (
                   <>
-                    <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-                      <Text style={styles.editButtonText}>Edit Profile</Text>
+                    <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.primary }]} onPress={() => setIsEditing(true)}>
+                      <Text style={[styles.editButtonText, { color: colors.textLight }]}>Edit Profile</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.changePasswordButton} onPress={() => setShowPasswordForm(!showPasswordForm)}>
-                      <Text style={styles.changePasswordText}>Change Password</Text>
+                    <TouchableOpacity style={[styles.changePasswordButton, { backgroundColor: colors.primary }]} onPress={() => setShowPasswordForm(!showPasswordForm)}>
+                      <Text style={[styles.changePasswordText, { color: colors.textLight }]}>Change Password</Text>
                     </TouchableOpacity>
                     {showPasswordForm && (
                       <View style={styles.passwordForm}>
                         <TextInput
-                          style={styles.infoInput}
+                          style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                           value={currentPassword}
                           onChangeText={setCurrentPassword}
                           placeholder="Current Password"
+                          placeholderTextColor={colors.placeholder}
                           secureTextEntry
                         />
                         <TextInput
-                          style={styles.infoInput}
+                          style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                           value={newPassword}
                           onChangeText={setNewPassword}
                           placeholder="New Password"
+                          placeholderTextColor={colors.placeholder}
                           secureTextEntry
                         />
                         <TextInput
-                          style={styles.infoInput}
+                          style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
                           value={confirmPassword}
                           onChangeText={setConfirmPassword}
                           placeholder="Confirm New Password"
+                          placeholderTextColor={colors.placeholder}
                           secureTextEntry
                         />
-                        <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword}>
-                          <Text style={styles.saveButtonText}>Save Password</Text>
+                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleChangePassword}>
+                          <Text style={[styles.saveButtonText, { color: colors.textLight }]}>Save Password</Text>
                         </TouchableOpacity>
                       </View>
                     )}
-                    <TouchableOpacity style={styles.settingsButton} onPress={handleAdditionalSettings}>
-                      <Text style={styles.settingsText}>Additional Settings</Text>
+                    <TouchableOpacity style={[styles.settingsButton, { backgroundColor: colors.primary }]} onPress={handleAdditionalSettings}>
+                      <Text style={[styles.settingsText, { color: colors.textLight }]}>Additional Settings</Text>
                     </TouchableOpacity>
                   </>
                 )}
               </View>
 
               {/* Logout */}
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutText}>Logout</Text>
+              <TouchableOpacity style={[styles.logoutButton, { backgroundColor: colors.error }]} onPress={handleLogout}>
+                <Text style={[styles.logoutText, { color: colors.textLight }]}>Logout</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

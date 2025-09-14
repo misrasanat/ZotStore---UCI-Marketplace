@@ -6,12 +6,14 @@ import { useUnread } from '../UnreadContext';
 import { db } from '../firebase';
 import { doc, setDoc, increment } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useTheme } from '../ThemeContext';
 
 const CustomNavBar = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const currentScreen = route.name;
   const { hasUnread } = useUnread();
+  const { colors } = useTheme();
 
   const getIconColor = (screenName) => {
     const matchScreen = {
@@ -19,17 +21,17 @@ const CustomNavBar = () => {
       'Inbox Screen': 'Inbox Screen',
       'My Listings': 'My Listings'
     };
-    return currentScreen === matchScreen[screenName] ? '#fff' : 'rgba(255, 255, 255, 0.6)';
+    return currentScreen === matchScreen[screenName] ? colors.textLight : 'rgba(255, 255, 255, 0.6)';
   };
 
   return (
-    <View style={styles.navBar}>
+    <View style={[styles.navBar, { backgroundColor: colors.primary }]}>
         <TouchableOpacity 
           style={styles.navItem} 
           onPress={() => navigation.navigate('Home')}
         >
             <Icon name="home" size={24} color={getIconColor('Home')} />
-            {currentScreen === 'Home' && <View style={styles.activeIndicator} />}
+            {currentScreen === 'Home' && <View style={[styles.activeIndicator, { backgroundColor: colors.textLight }]} />}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem} 
@@ -37,16 +39,16 @@ const CustomNavBar = () => {
         >
             <View style={styles.iconContainer}>
                 <Icon name="message-square" size={24} color={getIconColor('Inbox Screen')} />
-                {hasUnread && <View style={styles.unreadDot} />}
+                {hasUnread && <View style={[styles.unreadDot, { backgroundColor: colors.error, borderColor: colors.textLight }]} />}
             </View>
-            {currentScreen === 'Inbox Screen' && <View style={styles.activeIndicator} />}
+            {currentScreen === 'Inbox Screen' && <View style={[styles.activeIndicator, { backgroundColor: colors.textLight }]} />}
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.navItem} 
           onPress={() => navigation.navigate('My Listings')}
         >
             <Icon name="list" size={24} color={getIconColor('My Listings')} />
-            {currentScreen === 'My Listings' && <View style={styles.activeIndicator} />}
+            {currentScreen === 'My Listings' && <View style={[styles.activeIndicator, { backgroundColor: colors.textLight }]} />}
         </TouchableOpacity>
     </View>
   );
@@ -58,9 +60,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         height: 50,
-        backgroundColor: '#0C2340',
         borderTopWidth: 1,
-        borderTopColor: '#10253dff',
     },
     navItem: {
         alignItems: 'center',
@@ -79,9 +79,7 @@ const styles = StyleSheet.create({
         width: 12,
         height: 12,
         borderRadius: 8,
-        backgroundColor: '#ff0000',
         borderWidth: 2,
-        borderColor: '#fff',
         zIndex: 1000,
     },
     activeIndicator: {
@@ -89,7 +87,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         width: 24,
         height: 3,
-        backgroundColor: '#fff',
         borderTopLeftRadius: 2,
         borderTopRightRadius: 2,
     },

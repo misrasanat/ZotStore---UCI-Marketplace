@@ -26,6 +26,7 @@ import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { uploadToCloudinary } from '../utils/cloudinary';
+import { useTheme } from '../ThemeContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
@@ -34,6 +35,8 @@ const IMAGE_HEIGHT = SCREEN_WIDTH; // Square image preview
 const AddProductScreen = ({ navigation }) => {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState(null);
+  const { colors, loading: themeLoading, isDarkMode } = useTheme();
+  
   const [categoryItems, setCategoryItems] = useState([
     { label: 'Electronics', value: 'electronics' },
     { label: 'Books', value: 'books' },
@@ -139,22 +142,43 @@ const AddProductScreen = ({ navigation }) => {
     }
   };
 
+  if (themeLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#0C2340" />
+        <Text style={{ marginTop: 12, color: '#666' }}>Loading theme...</Text>
+      </View>
+    );
+  }
+
+  // Use theme colors based on current theme mode
+  const currentColors = isDarkMode ? colors : {
+    background: '#ffffff',
+    surface: '#F8F9FA',
+    card: '#ffffff',
+    primary: '#0C2340',
+    text: '#495057',
+    textSecondary: '#6c757d',
+    textLight: '#ffffff',
+    border: '#E0E0E0',
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{flex: 1 }}
         // keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
-      <SafeAreaView edges={['top']} style={styles.header}>
+      <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: currentColors.background, borderBottomColor: currentColors.border }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-            <Feather name="arrow-left" size={24} color="#0C2340" />
+            <Feather name="arrow-left" size={24} color={currentColors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Listing</Text>
+          <Text style={[styles.headerTitle, { color: currentColors.text }]}>New Listing</Text>
           <View style={styles.headerRight} />
         </View>
       </SafeAreaView>
@@ -166,7 +190,7 @@ const AddProductScreen = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           <TouchableOpacity 
-            style={[styles.imageUpload, { height: IMAGE_HEIGHT }]}
+            style={[styles.imageUpload, { height: IMAGE_HEIGHT, backgroundColor: currentColors.surface }]}
             onPress={pickAndCropImage}
           >
             {image ? (
@@ -185,9 +209,9 @@ const AddProductScreen = ({ navigation }) => {
               </View>
             ) : (
               <View style={styles.imagePlaceholder}>
-                <Feather name="image" size={40} color="#666" />
-                <Text style={styles.imagePlaceholderText}>Add Photo</Text>
-                <Text style={styles.imagePlaceholderSubtext}>Tap to select and crop</Text>
+                <Feather name="image" size={40} color={currentColors.textSecondary} />
+                <Text style={[styles.imagePlaceholderText, { color: currentColors.textSecondary }]}>Add Photo</Text>
+                <Text style={[styles.imagePlaceholderSubtext, { color: currentColors.textSecondary }]}>Tap to select and crop</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -202,20 +226,22 @@ const AddProductScreen = ({ navigation }) => {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Title</Text>
+              <Text style={[styles.label, { color: currentColors.textSecondary }]}>Title</Text>
               <TextInput 
-                style={styles.input}
+                style={[styles.input, { backgroundColor: currentColors.surface, color: currentColors.text }]}
                 placeholder="What are you selling?"
+                placeholderTextColor={currentColors.textSecondary}
                 value={name}
                 onChangeText={setName}
               />
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Price</Text>
+              <Text style={[styles.label, { color: currentColors.textSecondary }]}>Price</Text>
               <TextInput 
-                style={styles.input}
+                style={[styles.input, { backgroundColor: currentColors.surface, color: currentColors.text }]}
                 placeholder="0.00"
+                placeholderTextColor={currentColors.textSecondary}
                 value={price}
                 onChangeText={(text) => {
                   const formatted = text.replace(/[^0-9.]/g, '');
@@ -233,10 +259,11 @@ const AddProductScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Description</Text>
+              <Text style={[styles.label, { color: currentColors.textSecondary }]}>Description</Text>
               <TextInput
-                style={[styles.input, styles.descInput, { height: Math.max(100, inputHeight) }]}
+                style={[styles.input, styles.descInput, { height: Math.max(100, inputHeight), backgroundColor: currentColors.surface, color: currentColors.text }]}
                 placeholder="Describe your item..."
+                placeholderTextColor={currentColors.textSecondary}
                 value={desc}
                 onChangeText={setDesc}
                 multiline
@@ -245,7 +272,7 @@ const AddProductScreen = ({ navigation }) => {
             </View>
 
             <View style={[styles.inputContainer]}>
-              <Text style={styles.label}>Category</Text>
+              <Text style={[styles.label, { color: currentColors.textSecondary }]}>Category</Text>
               <View style={{ paddingBottom: 60 }}>
               <DropDownPicker
                 open={open}
@@ -256,17 +283,20 @@ const AddProductScreen = ({ navigation }) => {
                 setItems={setCategoryItems}
                 placeholder="Select a category..."
                 style={{
-                  backgroundColor: '#F8F9FA',
+                  backgroundColor: currentColors.surface,
                   borderRadius: 8,
-                  borderColor: '#ccc',
+                  borderColor: currentColors.border,
                 }}
                 dropDownContainerStyle={{
-                  backgroundColor: '#F8F9FA',
-                  borderColor: '#ccc',
+                  backgroundColor: currentColors.surface,
+                  borderColor: currentColors.border,
                 }}
                 textStyle={{
                   fontSize: 16,
-                  color: '#333',
+                  color: currentColors.text,
+                }}
+                placeholderStyle={{
+                  color: currentColors.textSecondary,
                 }}
                 listMode="SCROLLVIEW"
               />
@@ -278,16 +308,17 @@ const AddProductScreen = ({ navigation }) => {
         
       
 
-      <SafeAreaView edges={['bottom']} style={[styles.footer]}>
+      <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: currentColors.background, borderTopColor: currentColors.border }]}>
         <TouchableOpacity 
           style={[
             styles.submitButton,
+            { backgroundColor: currentColors.primary },
             (!name.trim() || !price.trim() || !desc.trim()) && styles.submitButtonDisabled
           ]}
           onPress={handleSubmit}
           disabled={!name.trim() || !price.trim() || !desc.trim()}
         >
-          <Text style={styles.submitButtonText}>Post Listing</Text>
+          <Text style={[styles.submitButtonText, { color: currentColors.textLight }]}>Post Listing</Text>
         </TouchableOpacity>
       </SafeAreaView>
 
@@ -305,12 +336,9 @@ const AddProductScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   header: {
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
   },
   headerContent: {
     flexDirection: 'row',
@@ -322,7 +350,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#0C2340',
   },
   backButton: {
     padding: 4,
@@ -335,7 +362,6 @@ const styles = StyleSheet.create({
   },
   imageUpload: {
     width: '100%',
-    backgroundColor: '#F8F9FA',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -365,12 +391,10 @@ const styles = StyleSheet.create({
   imagePlaceholderText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
   },
   imagePlaceholderSubtext: {
     marginTop: 4,
     fontSize: 12,
-    color: '#999',
   },
   cropInstructions: {
     position: 'absolute',
@@ -396,11 +420,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F8F9FA',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -412,21 +434,16 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   pickerInput: {
-    backgroundColor: '#F8F9FA',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    color: '#333',
   },
   footer: {
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
     padding: 16,
   },
   submitButton: {
-    backgroundColor: '#0C2340',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
@@ -435,7 +452,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#A0A0A0',
   },
   submitButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

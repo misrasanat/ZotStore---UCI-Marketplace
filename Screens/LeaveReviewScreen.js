@@ -1,12 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { useTheme } from '../ThemeContext';
+
+const getStyles = (colors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  backIcon: {
+    color: colors.primary,
+    fontSize: 30,
+    fontWeight: 'bold',
+  },
+  scrollContent: {
+    paddingTop: 100,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  userInfo: {
+    alignItems: 'center',
+    marginBottom: 30,
+    paddingVertical: 20,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 10,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  ratingSection: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 15,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  starButton: {
+    padding: 5,
+  },
+  star: {
+    fontSize: 40,
+    color: colors.textSecondary,
+  },
+  starSelected: {
+    color: '#ffd700',
+  },
+  ratingText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  commentSection: {
+    marginBottom: 30,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    padding: 15,
+    fontSize: 16,
+    minHeight: 120,
+    backgroundColor: colors.input,
+    color: colors.text,
+  },
+  charCount: {
+    textAlign: 'right',
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 5,
+  },
+  submitButton: {
+    backgroundColor: colors.button,
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: colors.textSecondary,
+  },
+  submitButtonText: {
+    color: colors.buttonText,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 const LeaveReviewScreen = ({ navigation, route }) => {
+  const { colors } = useTheme();
   const { userId, userName } = route.params;
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [userProfile, setUserProfile] = useState(null);
@@ -108,12 +233,16 @@ const LeaveReviewScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+    >
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Text style={styles.backIcon}>←</Text>
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.title}>Leave a Review</Text>
           <Text style={styles.subtitle}>Share your experience with {userName || userProfile?.name}</Text>
@@ -166,129 +295,8 @@ const LeaveReviewScreen = ({ navigation, route }) => {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    zIndex: 10,
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backIcon: {
-    color: '#194a7a',
-    fontSize: 30,
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingTop: 100,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  userInfo: {
-    alignItems: 'center',
-    marginBottom: 30,
-    paddingVertical: 20,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  ratingSection: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 15,
-  },
-  starsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  starButton: {
-    padding: 5,
-  },
-  star: {
-    fontSize: 40,
-    color: '#ddd',
-  },
-  starSelected: {
-    color: '#ffd700',
-  },
-  ratingText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
-  },
-  commentSection: {
-    marginBottom: 30,
-  },
-  commentInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
-    minHeight: 120,
-    backgroundColor: '#f8f9fa',
-  },
-  charCount: {
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#999',
-    marginTop: 5,
-  },
-  submitButton: {
-    backgroundColor: '#194a7a',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
-
-export default LeaveReviewScreen; 
+export default LeaveReviewScreen;
