@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     card: {
         flex: 1,
         margin: 8,
-        backgroundColor: '000',
+        backgroundColor: '#ffffff', // Fixed: was '000' which is invalid
         borderRadius: 10,
         paddingHorizontal: 8,
         paddingBottom: 14,

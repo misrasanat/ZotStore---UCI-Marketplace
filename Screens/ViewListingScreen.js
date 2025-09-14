@@ -8,11 +8,13 @@ import { useState, useEffect } from 'react';
 import { getDoc } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
+import { useTheme } from '../ThemeContext';
 
 const ViewListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
   const [sellerInfo, setSellerInfo] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const { colors } = useTheme();
 
   const updatedTime = item.timestamp?.toDate
     ? formatDistanceToNow(item.timestamp.toDate(), { addSuffix: true })
@@ -90,16 +92,16 @@ const ViewListingScreen = ({ route, navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView edges={['top']} style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerContent}>
           <TouchableOpacity 
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-            <Icon name="arrow-left" size={24} color="#0C2340" />
+            <Icon name="arrow-left" size={24} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>View Listing</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>View Listing</Text>
           <View style={styles.headerRight}>
             {currentUser?.uid === item.userId && item.status === 'active' && (
               <View style={styles.headerActions}>
@@ -107,13 +109,13 @@ const ViewListingScreen = ({ route, navigation }) => {
                   onPress={() => navigation.navigate('Edit Listing', { item })}
                   style={styles.headerButton}
                 >
-                  <Icon name="edit-2" size={20} color="#0C2340" />
+                  <Icon name="edit-2" size={20} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   onPress={handleArchive}
                   style={styles.headerButton}
                 >
-                  <Icon name="trash-2" size={20} color="#FF6B6B" />
+                  <Icon name="trash-2" size={20} color={colors.error} />
                 </TouchableOpacity>
               </View>
             )}
@@ -129,32 +131,32 @@ const ViewListingScreen = ({ route, navigation }) => {
         {item.image ? (
           <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
         ) : (
-          <View style={styles.imagePlaceholder}>
-            <Icon name="image" size={40} color="#999" />
-            <Text style={styles.placeholderText}>No Image Available</Text>
+          <View style={[styles.imagePlaceholder, { backgroundColor: colors.surface }]}>
+            <Icon name="image" size={40} color={colors.textSecondary} />
+            <Text style={[styles.placeholderText, { color: colors.textSecondary }]}>No Image Available</Text>
           </View>
         )}
 
-        <View style={styles.detailsContainer}>
+        <View style={[styles.detailsContainer, { backgroundColor: colors.background }]}>
           {/* Price and Title Section */}
           <View style={styles.priceSection}>
-            <Text style={styles.price}>{formattedPrice}</Text>
-            <Text style={styles.updatedAt}>{updatedTime}</Text>
+            <Text style={[styles.price, { color: colors.price }]}>{formattedPrice}</Text>
+            <Text style={[styles.updatedAt, { color: colors.textSecondary }]}>{updatedTime}</Text>
           </View>
           
-          <Text style={styles.title}>{item.name}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{item.name}</Text>
 
           {/* Description Section */}
           <View style={styles.descriptionSection}>
-            <Text style={styles.sectionLabel}>Description</Text>
-            <Text style={styles.desc}>{item.desc}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.primary }]}>Description</Text>
+            <Text style={[styles.desc, { color: colors.text }]}>{item.desc}</Text>
           </View>
 
           {/* Seller Section */}
           <View style={styles.sellerSection}>
-            <Text style={styles.sectionLabel}>Seller Information</Text>
+            <Text style={[styles.sectionLabel, { color: colors.primary }]}>Seller Information</Text>
             <TouchableOpacity 
-              style={styles.profileCard} 
+              style={[styles.profileCard, { backgroundColor: colors.card }]} 
               onPress={() => navigation.navigate('Other User', { userId: item.userId })}
               activeOpacity={0.7}
             >
@@ -167,27 +169,27 @@ const ViewListingScreen = ({ route, navigation }) => {
               <View style={styles.profileText}>
             {sellerInfo ? (
               <>
-                <Text style={styles.profileName}>{sellerInfo.name || 'Unknown Seller'}</Text>
+                <Text style={[styles.profileName, { color: colors.text }]}>{sellerInfo.name || 'Unknown Seller'}</Text>
     
-                <Text style={styles.subtleText}>{sellerInfo.studentType || 'Student'} · { getYearString(sellerInfo.year) || 'Unknown Year'}</Text>
+                <Text style={[styles.subtleText, { color: colors.textSecondary }]}>{sellerInfo.studentType || 'Student'} · { getYearString(sellerInfo.year) || 'Unknown Year'}</Text>
                 {sellerInfo.major && (
-                  <Text style={styles.subtleText}>{sellerInfo.major}</Text>
+                  <Text style={[styles.subtleText, { color: colors.textSecondary }]}>{sellerInfo.major}</Text>
                 )}
               </>
             ) : (
-              <Text style={styles.subtleText}>Loading seller info...</Text>
+              <Text style={[styles.subtleText, { color: colors.textSecondary }]}>Loading seller info...</Text>
             )}
               </View>
-              <Icon name="chevron-right" size={24} color="#999" />
+              <Icon name="chevron-right" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Location Section */}
           <View style={styles.locationSection}>
-            <Text style={styles.sectionLabel}>Location</Text>
-            <View style={styles.locationCard}>
-              <Icon name="map-pin" size={20} color="#2e8b57" />
-              <Text style={styles.locationText}>{getLocationString(sellerInfo)}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.primary }]}>Location</Text>
+            <View style={[styles.locationCard, { backgroundColor: colors.card }]}>
+              <Icon name="map-pin" size={20} color={colors.price} />
+              <Text style={[styles.locationText, { color: colors.text }]}>{getLocationString(sellerInfo)}</Text>
             </View>
           </View>
         </View>
@@ -195,14 +197,14 @@ const ViewListingScreen = ({ route, navigation }) => {
 
       {/* Message Button */}
       {currentUser?.uid !== item.userId && (
-        <SafeAreaView edges={['bottom']} style={styles.footer}>
+        <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.background }]}>
           <TouchableOpacity
-            style={styles.messageButton}
+            style={[styles.messageButton, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
             activeOpacity={0.7}
           >
-            <Icon name="message-square" size={20} color="#fff" style={styles.messageIcon} />
-            <Text style={styles.messageButtonText}>Message Seller</Text>
+            <Icon name="message-square" size={20} color={colors.textLight} style={styles.messageIcon} />
+            <Text style={[styles.messageButtonText, { color: colors.textLight }]}>Message Seller</Text>
           </TouchableOpacity>
         </SafeAreaView>
       )}

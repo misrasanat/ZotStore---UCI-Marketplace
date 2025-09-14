@@ -6,6 +6,7 @@ import { getAuth } from 'firebase/auth';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
+import { useTheme } from '../ThemeContext';
 
 const MyListingsScreen = ({ navigation }) => {
     const [currentListings, setCurrentListings] = useState([]);
@@ -15,6 +16,7 @@ const MyListingsScreen = ({ navigation }) => {
     const [showPast, setShowPast] = useState(false);
     const [imageErrors, setImageErrors] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
+    const { colors } = useTheme();
 
     const filterListings = (listings) => {
         if (!searchQuery.trim()) return listings;
@@ -74,7 +76,7 @@ const MyListingsScreen = ({ navigation }) => {
 
         return (
             <TouchableOpacity 
-                style={styles.card} 
+                style={[styles.card, { backgroundColor: colors.card }]} 
                 onPress={() => navigation.navigate('View Listing', { item })}
                 activeOpacity={0.7}
             >
@@ -86,12 +88,12 @@ const MyListingsScreen = ({ navigation }) => {
                         onError={() => setImageErrors((prev) => ({ ...prev, [item.id]: true }))}
                     />
                 ) : (
-                    <View style={styles.imagePlaceholder}>
-                        <Feather name="image" size={30} color="#999" />
+                    <View style={[styles.imagePlaceholder, { backgroundColor: colors.surface }]}>
+                        <Feather name="image" size={30} color={colors.textSecondary} />
                     </View>
                 )}
-                <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-                <Text style={styles.cardPrice}>{formattedPrice}</Text>
+                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[styles.cardPrice, { color: colors.price }]}>{formattedPrice}</Text>
             </TouchableOpacity>
         );
     };
@@ -110,19 +112,20 @@ const MyListingsScreen = ({ navigation }) => {
         <TouchableOpacity 
             style={[
                 styles.sectionToggle,
+                { backgroundColor: colors.card },
                 isVisible && styles.sectionToggleActive
             ]} 
             onPress={onToggle}
             activeOpacity={0.8}
         >
             <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>{title}</Text>
-                <Text style={styles.itemCount}>{count} items</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+                <Text style={[styles.itemCount, { color: colors.textSecondary }]}>{count} items</Text>
             </View>
             <Feather 
                 name={isVisible ? "chevron-up" : "chevron-down"} 
                 size={24} 
-                color="#666"
+                color={colors.textSecondary}
             />
         </TouchableOpacity>
     );
@@ -130,7 +133,7 @@ const MyListingsScreen = ({ navigation }) => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0C2340" />
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
@@ -138,15 +141,15 @@ const MyListingsScreen = ({ navigation }) => {
     const noListings = currentListings.length === 0 && pastListings.length === 0;
 
     return (
-        <View style={styles.container}>
-            <SafeAreaView edges={['top']} style={styles.header}>
-                <Text style={styles.headerTitle}>My Listings</Text>
-                <View style={styles.searchContainer}>
-                    <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>My Listings</Text>
+                <View style={[styles.searchContainer, { backgroundColor: colors.searchBackground, borderColor: colors.searchBorder }]}>
+                    <Feather name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
                     <TextInput
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Search your listings..."
-                        placeholderTextColor="#999"
+                        placeholderTextColor={colors.placeholder}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
@@ -155,28 +158,28 @@ const MyListingsScreen = ({ navigation }) => {
                             onPress={() => setSearchQuery('')}
                             style={styles.clearButton}
                         >
-                            <Feather name="x" size={20} color="#666" />
+                            <Feather name="x" size={20} color={colors.textSecondary} />
                         </TouchableOpacity>
                     )}
                 </View>
             </SafeAreaView>
 
-            <View style={styles.content}>
+            <View style={[styles.content, { backgroundColor: colors.background }]}>
                 {noListings ? (
                     <View style={styles.emptyState}>
-                        <Feather name="package" size={50} color="#999" />
-                        <Text style={styles.emptyStateText}>No listings yet</Text>
+                        <Feather name="package" size={50} color={colors.textSecondary} />
+                        <Text style={[styles.emptyStateText, { color: colors.text }]}>No listings yet</Text>
                         <TouchableOpacity 
-                            style={styles.addListingButton}
+                            style={[styles.addListingButton, { backgroundColor: colors.primary }]}
                             onPress={() => navigation.navigate('AddProduct')}
                         >
-                            <Text style={styles.addListingButtonText}>Create a Listing</Text>
+                            <Text style={[styles.addListingButtonText, { color: colors.textLight }]}>Create a Listing</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <ScrollView
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.listContainer}
+                        contentContainerStyle={[styles.listContainer, { backgroundColor: colors.background }]}
                     >
                         {renderSectionHeader(
                             'Current Listings',
@@ -197,7 +200,7 @@ const MyListingsScreen = ({ navigation }) => {
                 )}
             </View>
 
-            <SafeAreaView edges={['bottom']} style={styles.footer}>
+            <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.primary }]}>
                 <CustomNavBar />
             </SafeAreaView>
         </View>

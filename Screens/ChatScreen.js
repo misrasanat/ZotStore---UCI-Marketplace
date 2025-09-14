@@ -9,6 +9,7 @@ import { Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import { useUnread } from '../UnreadContext';
+import { useTheme } from '../ThemeContext';
 
 
 
@@ -21,6 +22,7 @@ const ChatScreen = ({route, navigation}) => {
   const headerHeight = useHeaderHeight();
   const [bottomPadding, setBottomPadding] = useState(60);
   const { refreshUnreadStatus } = useUnread();
+  const { colors } = useTheme();
 
   const handleSend = async () => {
     if (!newMsg.trim()) return;
@@ -185,17 +187,17 @@ const ChatScreen = ({route, navigation}) => {
   }, [messages]);
 
   return (
-    <View style={[styles.container]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={headerHeight}
       >
-      <SafeAreaView edges={['top']} style={styles.safeContainer}>
-      <View style={styles.header}>
+      <SafeAreaView edges={['top']} style={[styles.safeContainer, { backgroundColor: colors.primary }]}>
+      <View style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.headerSide}>
               <TouchableOpacity onPress={() => navigation.goBack()}>
-                  <Text style={styles.backText}>←</Text>
+                  <Text style={[styles.backText, { color: colors.textLight }]}>←</Text>
               </TouchableOpacity>
           </View>
 
@@ -207,7 +209,7 @@ const ChatScreen = ({route, navigation}) => {
                 />
               )} */}
               <TouchableOpacity onPress={() => navigation.navigate('Other User', { userId: route.params.userId })}>
-                <Text style={styles.headerTitle}>{receiverInfo?.name || 'Loading...'}</Text>
+                <Text style={[styles.headerTitle, { color: colors.textLight }]}>{receiverInfo?.name || 'Loading...'}</Text>
               </TouchableOpacity>
           </View>
 
@@ -217,7 +219,7 @@ const ChatScreen = ({route, navigation}) => {
 
 
         {loading ? (
-          <Text style={{ padding: 16, fontStyle: 'italic' }}>Loading chat...</Text>
+          <Text style={[{ padding: 16, fontStyle: 'italic' }, { color: colors.text }]}>Loading chat...</Text>
         ) : (
           <FlatList
             ref={flatListRef}
@@ -226,26 +228,27 @@ const ChatScreen = ({route, navigation}) => {
             renderItem={({ item }) => (
               <MessageBubble text={item.text} fromSelf={item.fromSelf} />
             )}
-            contentContainerStyle={styles.messagesContainer}
+            contentContainerStyle={[styles.messagesContainer, { backgroundColor: colors.background }]}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
           />
         )}
         
 
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { backgroundColor: colors.background }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
             placeholder="Type a message..."
+            placeholderTextColor={colors.placeholder}
             value={newMsg}
             onChangeText={setNewMsg}
           />
-          <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-            <Text style={styles.sendText}>➤</Text>
+          <TouchableOpacity onPress={handleSend} style={[styles.sendButton, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.sendText, { color: colors.textLight }]}>➤</Text>
           </TouchableOpacity>
         </View>
         </KeyboardAvoidingView>
-        <SafeAreaView  edges={['bottom']} style={styles.safeContainer2}>
+        <SafeAreaView  edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary }]}>
           <CustomNavBar />
         </SafeAreaView>
       
@@ -256,13 +259,10 @@ const ChatScreen = ({route, navigation}) => {
   const styles = StyleSheet.create({
     container: { 
       flex: 1, 
-      backgroundColor: '#fff',
   },
   safeContainer: {
-    backgroundColor: '#194a7a',
   },
   safeContainer2: {
-        backgroundColor: '#0C2340',
     },
   backButton: {
     padding: 12,
@@ -271,14 +271,12 @@ const ChatScreen = ({route, navigation}) => {
   
   backText: {
       fontSize: 38,
-      color: '#fff',
       fontWeight: '600',
   },
     header: {
       flexDirection: 'row',
       alignItems: 'flex-end',
       justifyContent: 'space-between',
-      backgroundColor: '#194a7a',
       paddingBottom: 10,
       paddingHorizontal: 16
     },
@@ -294,7 +292,6 @@ const ChatScreen = ({route, navigation}) => {
   },
   
   headerTitle: {
-    color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
     paddingBottom: 5,
@@ -311,39 +308,33 @@ const ChatScreen = ({route, navigation}) => {
       marginVertical: 6,
     },
     self: {
-      backgroundColor: '#194a7a',
       alignSelf: 'flex-end',
       borderBottomRightRadius: 0,
     },
     other: {
-      backgroundColor: '#e5e5e5',
       alignSelf: 'flex-start',
       borderBottomLeftRadius: 0,
     },
-    bubbleText: { color: '#000' },
+    bubbleText: { },
     inputRow: {
       flexDirection: 'row',
       padding: 12,
       borderTopWidth: 1,
-      borderColor: '#ddd',
       alignItems: 'center',
     },
     input: {
       flex: 1,
       borderRadius: 20,
-      backgroundColor: '#f0f0f0',
       paddingHorizontal: 14,
       paddingVertical: 10,
       marginRight: 8,
     },
     sendButton: {
-      backgroundColor: '#194a7a',
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: 20,
     },
     sendText: {
-      color: '#fff',
       fontSize: 16,
     },
     navBar: {
@@ -351,9 +342,7 @@ const ChatScreen = ({route, navigation}) => {
           justifyContent: 'space-around',
           alignItems: 'center',
           height: 50,
-          backgroundColor: '#0C2340',
           borderTopWidth: 1,
-          borderTopColor: '#10253dff',
           
       },
       navItem: {

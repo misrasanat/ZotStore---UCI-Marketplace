@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList, ActivityIndicator } from 'react-native';
 import { collection, getDocs, query, where, orderBy, limit, startAfter } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useTheme } from '../ThemeContext';
 
 const AllReviewsScreen = ({ navigation, route }) => {
   const { userId, userName } = route.params;
@@ -13,6 +14,7 @@ const AllReviewsScreen = ({ navigation, route }) => {
   const [totalReviews, setTotalReviews] = useState(0);
   const [lastDoc, setLastDoc] = useState(null);
   const REVIEWS_PER_PAGE = 10;
+  const { colors } = useTheme();
 
   const fetchReviews = async (isLoadMore = false) => {
     try {
@@ -84,31 +86,31 @@ const AllReviewsScreen = ({ navigation, route }) => {
   };
 
   const renderReview = ({ item }) => (
-    <View style={styles.reviewCard}>
+    <View style={[styles.reviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.reviewHeader}>
         <Text style={styles.stars}>
           {'★'.repeat(item.rating)}{'☆'.repeat(5 - item.rating)}
         </Text>
-        <Text style={styles.reviewDate}>
+        <Text style={[styles.reviewDate, { color: colors.textSecondary }]}>
           {item.timestamp?.toDate ? 
             item.timestamp.toDate().toLocaleDateString() : 
             'Recent'
           }
         </Text>
       </View>
-      <Text style={styles.reviewText}>"{item.comment}"</Text>
-      <Text style={styles.reviewer}>— {item.reviewerName}</Text>
+      <Text style={[styles.reviewText, { color: colors.text }]}>"{item.comment}"</Text>
+      <Text style={[styles.reviewer, { color: colors.textSecondary }]}>— {item.reviewerName}</Text>
     </View>
   );
 
   const renderHeader = () => (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: colors.background }]}>
       <View style={styles.ratingSummary}>
-        <Text style={styles.averageRating}>{averageRating.toFixed(1)}</Text>
+        <Text style={[styles.averageRating, { color: colors.text }]}>{averageRating.toFixed(1)}</Text>
         <Text style={styles.starsDisplay}>
           {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))}
         </Text>
-        <Text style={styles.totalReviews}>({totalReviews} total reviews)</Text>
+        <Text style={[styles.totalReviews, { color: colors.textSecondary }]}>({totalReviews} total reviews)</Text>
       </View>
     </View>
   );
@@ -117,15 +119,15 @@ const AllReviewsScreen = ({ navigation, route }) => {
     if (!hasMore) {
       return (
         <View style={styles.footer}>
-          <Text style={styles.footerText}>No more reviews</Text>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>No more reviews</Text>
         </View>
       );
     }
     if (loadingMore) {
       return (
         <View style={styles.footer}>
-          <ActivityIndicator size="small" color="#194a7a" />
-          <Text style={styles.footerText}>Loading more reviews...</Text>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>Loading more reviews...</Text>
         </View>
       );
     }
@@ -134,22 +136,22 @@ const AllReviewsScreen = ({ navigation, route }) => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#194a7a" />
-        <Text style={styles.loadingText}>Loading reviews...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading reviews...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <Text style={styles.backIcon}>←</Text>
+        <Text style={[styles.backIcon, { color: colors.primary }]}>←</Text>
       </TouchableOpacity>
 
-      <View style={styles.titleContainer}>
-        <Text style={styles.title}>All Reviews</Text>
-        <Text style={styles.subtitle}>for {userName}</Text>
+      <View style={[styles.titleContainer, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.text }]}>All Reviews</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>for {userName}</Text>
       </View>
 
       {reviews.length > 0 ? (
@@ -161,13 +163,13 @@ const AllReviewsScreen = ({ navigation, route }) => {
           ListFooterComponent={renderFooter}
           onEndReached={loadMoreReviews}
           onEndReachedThreshold={0.1}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { backgroundColor: colors.background }]}
           showsVerticalScrollIndicator={false}
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No Reviews Yet</Text>
-          <Text style={styles.emptySubtitle}>This user hasn't received any reviews yet.</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No Reviews Yet</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>This user hasn't received any reviews yet.</Text>
         </View>
       )}
     </View>
@@ -177,7 +179,6 @@ const AllReviewsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   backButton: {
     position: 'absolute',
@@ -190,7 +191,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   backIcon: {
-    color: '#194a7a',
     fontSize: 30,
     fontWeight: 'bold',
   },
@@ -198,22 +198,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 100,
     paddingBottom: 20,
-    backgroundColor: '#f8f9fa',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     marginTop: 4,
   },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: '#f8f9fa',
   },
   ratingSummary: {
     flexDirection: 'row',
@@ -223,7 +219,6 @@ const styles = StyleSheet.create({
   averageRating: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
     marginRight: 8,
   },
   starsDisplay: {
@@ -232,20 +227,17 @@ const styles = StyleSheet.create({
   },
   totalReviews: {
     fontSize: 16,
-    color: '#555',
     marginLeft: 8,
   },
   listContainer: {
     paddingBottom: 20,
   },
   reviewCard: {
-    backgroundColor: '#fff',
     marginHorizontal: 20,
     marginVertical: 8,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -267,17 +259,14 @@ const styles = StyleSheet.create({
   },
   reviewDate: {
     fontSize: 12,
-    color: '#888',
   },
   reviewText: {
     fontSize: 16,
     lineHeight: 22,
-    color: '#333',
     marginBottom: 8,
   },
   reviewer: {
     fontSize: 14,
-    color: '#666',
     fontStyle: 'italic',
   },
   footer: {
@@ -286,19 +275,16 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: '#666',
     marginTop: 8,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
   },
   emptyContainer: {
     flex: 1,
@@ -309,12 +295,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
   },
 });
