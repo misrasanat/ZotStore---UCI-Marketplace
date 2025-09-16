@@ -219,7 +219,7 @@ const InboxScreen = ({ navigation }) => {
         />
       )}
 
-      <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.primary }]}>
+      <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.primary2 }]}>
         <CustomNavBar />
       </SafeAreaView>
     </View>

@@ -113,7 +113,7 @@ const MyListingsScreen = ({ navigation }) => {
             style={[
                 styles.sectionToggle,
                 { backgroundColor: colors.card },
-                isVisible && styles.sectionToggleActive
+                isVisible && { backgroundColor: colors.surface }  // Changed this line
             ]} 
             onPress={onToggle}
             activeOpacity={0.8}
@@ -200,7 +200,7 @@ const MyListingsScreen = ({ navigation }) => {
                 )}
             </View>
 
-            <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.primary }]}>
+            <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.primary2 }]}>
                 <CustomNavBar />
             </SafeAreaView>
         </View>
@@ -301,7 +301,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     sectionToggleActive: {
-        backgroundColor: '#fff',
     },
     sectionTitleContainer: {
         flexDirection: 'row',

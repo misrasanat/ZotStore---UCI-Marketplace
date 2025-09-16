@@ -21,10 +21,13 @@ import LeaveReviewScreen from './Screens/LeaveReviewScreen';
 import AllReviewsScreen from './Screens/AllReviewsScreen';
 import OtherUserListingsScreen from './Screens/OtherUserListingsScreen.js';
 import SettingsScreen from './Screens/SettingsScreen.js';
+import SignupNonUCI from './SignupNonUCI';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UnreadProvider } from './UnreadContext';
 import { ThemeProvider } from './ThemeContext';
+import { useState, useEffect } from 'react';
+import { loadFonts } from './fontLoader';
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
@@ -50,7 +53,7 @@ function Navigation() {
             <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: true, title: 'Leave a Review'}} />
             <Stack.Screen name="All Reviews" component={AllReviewsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: true, title: 'Settings' }} />
+            <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
           </>
           ) : (
           // Authentication and incomplete profile screens
@@ -60,6 +63,7 @@ function Navigation() {
             <Stack.Screen name="Signup" component={Signup} />
             <Stack.Screen name="SignupProfile" component={Signup2} />
             <Stack.Screen name="OTPVerification" component={OTPVerification} />
+            <Stack.Screen name="SignupNonUCI" component={SignupNonUCI} />
           </>
         )}
       </Stack.Navigator>
@@ -69,6 +73,24 @@ function Navigation() {
 }
 
 export default function App() {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await loadFonts();
+        setFontsLoaded(true);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+    prepare();
+  }, []);
+
+  if (!fontsLoaded) {
+    return null; // Or return a loading screen
+  }
+
   return (
     <ThemeProvider>
       <AuthProvider>

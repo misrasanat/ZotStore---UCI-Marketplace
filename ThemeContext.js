@@ -77,6 +77,9 @@ export const ThemeProvider = ({ children }) => {
       surface: '#f8f9fa',
       card: '#ffffff',
       primary: '#0C2340',
+      primary2: '#0C2340',
+      primary3: '#ffffff',
+      buttonBackground: '#0C2340',
       
       // Text colors
       text: '#495057',
@@ -96,8 +99,8 @@ export const ThemeProvider = ({ children }) => {
       // Interactive colors
       button: '#0C2340',
       buttonText: '#ffffff',
-      input: '#ffffff',
-      inputBorder: '#dee2e6',
+      input: '#e9e5e5dc',
+      inputBorder: '#a4a5a763',
       placeholder: '#6c757d',
       
       // Shadow
@@ -118,6 +121,9 @@ export const ThemeProvider = ({ children }) => {
       surface: '#1e1e1e',
       card: '#2d2d2d',
       primary: '#bb86fc', // Purple accent for dark theme
+      primary2: '#1e1e1e',
+      primary3: '#bb86fc',
+      buttonBackground: '#3d3a3aff',
       
       // Text colors
       text: '#ffffff',

@@ -193,7 +193,7 @@ const ChatScreen = ({route, navigation}) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={headerHeight}
       >
-      <SafeAreaView edges={['top']} style={[styles.safeContainer, { backgroundColor: colors.primary }]}>
+      <SafeAreaView edges={['top']} style={[styles.safeContainer, { backgroundColor: colors.primary}]}>
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.headerSide}>
               <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -248,7 +248,7 @@ const ChatScreen = ({route, navigation}) => {
           </TouchableOpacity>
         </View>
         </KeyboardAvoidingView>
-        <SafeAreaView  edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary }]}>
+        <SafeAreaView  edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary2 }]}>
           <CustomNavBar />
         </SafeAreaView>
       

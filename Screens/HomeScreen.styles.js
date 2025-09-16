@@ -93,6 +93,63 @@ const styles = StyleSheet.create({
         marginRight: 8,
         opacity: 0.6,
     },
+    filterIcon: {
+        position: 'relative',
+        zIndex: 1,
+    },
+
+    modal: {
+        margin: 0,
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        maxHeight: '70%',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 15,
+        color: '#0C2340',
+        textAlign: 'center',
+    },
+    categoryItem: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        marginVertical: 4,
+    },
+    categoryItemSelected: {
+        backgroundColor: '#F0F0F0',
+    },
+    categoryText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    categoryTextSelected: {
+        color: '#0C2340',
+        fontWeight: '600',
+    },
+    filterTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0F0F0',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        marginTop: 4,
+        marginBottom: 10,
+        marginHorizontal: 16,
+        alignSelf: 'flex-start',
+    },
+    filterTagText: {
+        fontSize: 14,
+        color: '#333',
+        marginRight: 8,
+    },
     sellButton: {
         backgroundColor: '#0C2340',
         paddingVertical: 10,
@@ -247,7 +304,31 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
-    
+    filterSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingRight: 12,
+    },
+    filterTagsContainer: {
+        flexGrow: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    filterDivider: {
+        width: 1,
+        height: 24,
+        backgroundColor: '#E0E0E0',
+        marginHorizontal: 8,
+    },
+    clearAllButton: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+    },
+    clearAllText: {
+        color: '#0C2340',
+        fontSize: 14,
+        fontWeight: '500',
+    },
 
 })
 export default styles;
