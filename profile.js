@@ -518,16 +518,16 @@ export default function Profile({ navigation }) {
               {/* Edit Profile & Change Password */}
               <View style={[styles.section, { backgroundColor: colors.card }]}>
                 {isEditing ? (
-                  <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSave}>
-                    <Text style={[styles.saveButtonText, { color: colors.textLight }]}>Save Changes</Text>
+                  <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.buttonBackground  }]} onPress={handleSave}>
+                    <Text style={[styles.saveButtonText, { color: colors.primary3 }]}>Save Changes</Text>
                   </TouchableOpacity>
                 ) : (
                   <>
-                    <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.primary }]} onPress={() => setIsEditing(true)}>
-                      <Text style={[styles.editButtonText, { color: colors.textLight }]}>Edit Profile</Text>
+                    <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.buttonBackground }]} onPress={() => setIsEditing(true)}>
+                      <Text style={[styles.editButtonText, { color: colors.primary3 }]}>Edit Profile</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.changePasswordButton, { backgroundColor: colors.primary }]} onPress={() => setShowPasswordForm(!showPasswordForm)}>
-                      <Text style={[styles.changePasswordText, { color: colors.textLight }]}>Change Password</Text>
+                    <TouchableOpacity style={[styles.changePasswordButton, { backgroundColor: colors.buttonBackground, borderColor: '#3d3a3aff'}]} onPress={() => setShowPasswordForm(!showPasswordForm)}>
+                      <Text style={[styles.changePasswordText, { color: colors.primary3}]}>Change Password</Text>
                     </TouchableOpacity>
                     {showPasswordForm && (
                       <View style={styles.passwordForm}>
@@ -555,13 +555,13 @@ export default function Profile({ navigation }) {
                           placeholderTextColor={colors.placeholder}
                           secureTextEntry
                         />
-                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleChangePassword}>
-                          <Text style={[styles.saveButtonText, { color: colors.textLight }]}>Save Password</Text>
+                        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.buttonBackground  }]} onPress={handleChangePassword}>
+                          <Text style={[styles.saveButtonText, { color: colors.primary3 }]}>Save Password</Text>
                         </TouchableOpacity>
                       </View>
                     )}
-                    <TouchableOpacity style={[styles.settingsButton, { backgroundColor: colors.primary }]} onPress={handleAdditionalSettings}>
-                      <Text style={[styles.settingsText, { color: colors.textLight }]}>Additional Settings</Text>
+                    <TouchableOpacity style={[styles.settingsButton, { backgroundColor: colors.buttonBackground, borderColor: '#3d3a3aff'  }]} onPress={handleAdditionalSettings}>
+                      <Text style={[styles.settingsText, { color: colors.primary3}]}>Additional Settings</Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -577,7 +577,7 @@ export default function Profile({ navigation }) {
       </TouchableWithoutFeedback>
       
       {/* Navigation Bar - Outside ScrollView */}
-      <SafeAreaView edges={['bottom']} style={styles.safeContainer2}>
+      <SafeAreaView edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary2 }]}>
         <CustomNavBar />
       </SafeAreaView>
     </View>

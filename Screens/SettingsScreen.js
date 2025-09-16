@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFirestore, doc, getDoc, setDoc, deleteField } from 'firebase/firestore';
 import { auth } from '../firebase';
 import { useTheme } from '../ThemeContext';
@@ -123,103 +124,129 @@ export default function SettingsScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.header, { color: colors.text }]}>Settings</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()} 
+            style={styles.backButton}
+          >
+            <Text style={[styles.backButtonText, { color: colors.text }]}>←</Text>
+          </TouchableOpacity>
+          <Text style={[styles.header, { color: colors.text }]}>Settings</Text>
+          <View style={styles.backButton} />
+        </View>
 
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Appearance</Text>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.label, { color: colors.text }]}>Dark Theme</Text>
-          <Switch 
-            value={isDarkMode} 
-            onValueChange={toggleTheme}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={isDarkMode ? colors.buttonText : colors.text}
-          />
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Appearance</Text>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.label, { color: colors.text }]}>Dark Theme</Text>
+            <Switch 
+              value={isDarkMode} 
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={isDarkMode ? colors.buttonText : colors.text}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Notifications</Text>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.label, { color: colors.text }]}>Enable Notifications</Text>
-          <Switch 
-            value={notifEnabled} 
-            onValueChange={onToggleMasterNotif}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={notifEnabled ? colors.buttonText : colors.text}
-          />
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Notifications - Coming Soon</Text>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.label, { color: colors.text }]}>Enable Notifications</Text>
+            <Switch 
+              value={notifEnabled} 
+              onValueChange={onToggleMasterNotif}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={notifEnabled ? colors.buttonText : colors.text}
+            />
+          </View>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Chat</Text>
+            <Switch 
+              value={notifChat && notifEnabled} 
+              onValueChange={onToggleChat} 
+              disabled={!notifEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={notifChat && notifEnabled ? colors.buttonText : colors.text}
+            />
+          </View>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Listings</Text>
+            <Switch 
+              value={notifListings && notifEnabled} 
+              onValueChange={onToggleListings} 
+              disabled={!notifEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={notifListings && notifEnabled ? colors.buttonText : colors.text}
+            />
+          </View>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Reviews</Text>
+            <Switch 
+              value={notifReviews && notifEnabled} 
+              onValueChange={onToggleReviews} 
+              disabled={!notifEnabled}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={notifReviews && notifEnabled ? colors.buttonText : colors.text}
+            />
+          </View>
         </View>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Chat</Text>
-          <Switch 
-            value={notifChat && notifEnabled} 
-            onValueChange={onToggleChat} 
-            disabled={!notifEnabled}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={notifChat && notifEnabled ? colors.buttonText : colors.text}
-          />
-        </View>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Listings</Text>
-          <Switch 
-            value={notifListings && notifEnabled} 
-            onValueChange={onToggleListings} 
-            disabled={!notifEnabled}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={notifListings && notifEnabled ? colors.buttonText : colors.text}
-          />
-        </View>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Reviews</Text>
-          <Switch 
-            value={notifReviews && notifEnabled} 
-            onValueChange={onToggleReviews} 
-            disabled={!notifEnabled}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={notifReviews && notifEnabled ? colors.buttonText : colors.text}
-          />
-        </View>
-      </View>
 
-      <View style={[styles.section, { backgroundColor: colors.card }]}>
-        <Text style={[styles.sectionTitle, { color: colors.primary }]}>Privacy</Text>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.label, { color: colors.text }]}>Show Phone Number</Text>
-          <Switch 
-            value={showPhone} 
-            onValueChange={onToggleShowPhone}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={showPhone ? colors.buttonText : colors.text}
-          />
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Privacy</Text>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.label, { color: colors.text }]}>Show Phone Number</Text>
+            <Switch 
+              value={showPhone} 
+              onValueChange={onToggleShowPhone}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={showPhone ? colors.buttonText : colors.text}
+            />
+          </View>
+          <View style={styles.rowBetween}>
+            <Text style={[styles.label, { color: colors.text }]}>Show Full Location</Text>
+            <Switch 
+              value={showFullLocation} 
+              onValueChange={onToggleFullLocation}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={showFullLocation ? colors.buttonText : colors.text}
+            />
+          </View>
         </View>
-        <View style={styles.rowBetween}>
-          <Text style={[styles.label, { color: colors.text }]}>Show Full Location</Text>
-          <Switch 
-            value={showFullLocation} 
-            onValueChange={onToggleFullLocation}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={showFullLocation ? colors.buttonText : colors.text}
-          />
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    paddingTop: 24,
+    paddingTop: 8, // reduced from 24
     paddingHorizontal: 24,
     paddingBottom: 40,
     backgroundColor: '#f8f9fa',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: 28,
+  },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#495057',
-    marginBottom: 16,
+    flex: 1,
+    textAlign: 'center',
   },
   section: {
     width: '100%',
@@ -290,4 +317,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-}); 
+});

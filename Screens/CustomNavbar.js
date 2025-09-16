@@ -25,7 +25,7 @@ const CustomNavBar = () => {
   };
 
   return (
-    <View style={[styles.navBar, { backgroundColor: colors.primary }]}>
+    <View style={[styles.navBar, { backgroundColor: colors.primary2 }]}>
         <TouchableOpacity 
           style={styles.navItem} 
           onPress={() => navigation.navigate('Home')}

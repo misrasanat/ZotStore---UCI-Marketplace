@@ -29,15 +29,16 @@ export const AuthProvider = ({ children }) => {
             const userData = userDoc.data();
             console.log('User profile data:', userData);
             
-            // Skip email verification for test account
-            const skipVerification = isTestAccount(user.email);
+            // Check if email is UCI or non-UCI
+            const isUCIEmail = user.email?.toLowerCase().endsWith('@uci.edu');
+            const skipVerification = !isUCIEmail || isTestAccount(user.email);
             console.log('Skip verification:', skipVerification, 'for email:', user.email);
             
-            if (!user.emailVerified && !skipVerification) {
-              console.log('Email not verified - user cannot access app');
+            if (isUCIEmail && !user.emailVerified && !skipVerification) {
+              console.log('UCI Email not verified - user cannot access app');
               setUser(null);
               setUserProfile(null);
-              setLoading(false); //loading is set to false for unverified users
+              setLoading(false);
               return;
             }
           
@@ -130,4 +131,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

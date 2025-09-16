@@ -11,7 +11,8 @@ import {
   ActivityIndicator, 
   Dimensions,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -27,12 +28,27 @@ import Feather from 'react-native-vector-icons/Feather';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { uploadToCloudinary } from '../utils/cloudinary';
 import { useTheme } from '../ThemeContext';
+import { useAuth } from '../AuthContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ASPECT_RATIO = 1; // Square images
 const IMAGE_HEIGHT = SCREEN_WIDTH; // Square image preview
 
 const AddProductScreen = ({ navigation }) => {
+  const { userProfile } = useAuth();
+
+  // Check if user is UCI student and verified
+  useEffect(() => {
+    const isUCIEmail = userProfile?.email?.toLowerCase().endsWith('@uci.edu');
+    if (!isUCIEmail) {
+        Alert.alert(
+            'Access Denied',
+            'Only UCI students can create listings.',
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+    }
+}, [userProfile]);
+
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState(null);
   const { colors, loading: themeLoading, isDarkMode } = useTheme();
@@ -40,7 +56,7 @@ const AddProductScreen = ({ navigation }) => {
   const [categoryItems, setCategoryItems] = useState([
     { label: 'Electronics', value: 'electronics' },
     { label: 'Books', value: 'books' },
-    { label: 'Clothing', value: 'clothing' },
+    { label: 'Accessories', value: 'accessories' }, // Changed from clothing
     { label: 'Furniture', value: 'furniture' },
     { label: 'Sports Equipment', value: 'sports' },
     { label: 'Toys & Games', value: 'toys' },

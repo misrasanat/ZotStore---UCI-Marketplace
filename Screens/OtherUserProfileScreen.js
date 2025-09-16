@@ -166,7 +166,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   
   const renderListing = ({ item }) => (
     <TouchableOpacity 
-      style={[styles.listingCard, { backgroundColor: colors.surface }]} 
+      style={[styles.listingCard, { backgroundColor: colors.background }]} 
       onPress={() => navigation.navigate('View Listing', { item })}
     >
       <Image source={{ uri: item.image }} style={styles.listingImage} />
@@ -186,7 +186,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       </SafeAreaView>
       <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
         {/* Profile Info */}
-        <View style={[styles.profileSection, { backgroundColor: colors.card }]}>
+        <View style={[styles.profileSection, { backgroundColor: colors.background }]}>
           {profileUser ? ( // Changed from 'user' to 'profileUser'
             <>
               <Image 
@@ -205,7 +205,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         </View>
 
         {/* Bio */}
-        <View style={[styles.bioBox, { backgroundColor: colors.card }]}>
+        <View style={[styles.bioBox, { backgroundColor: colors.background }]}>
           {profileUser ? (
           <>
             <Text style={[styles.bioHeader, { color: colors.primary }]}>About</Text>
@@ -262,7 +262,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           if (!phoneRow && !locationRow) return null;
 
           return (
-            <View style={[styles.contactBox, { backgroundColor: colors.card }]}>
+            <View style={[styles.contactBox, { backgroundColor: colors.background }]}>
               <Text style={[styles.sectionHeader, { color: colors.primary }]}>Contact & Location</Text>
               {phoneRow}
               {locationRow}
@@ -293,8 +293,8 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           </View>
 
           {/* Listings Preview */}
-          <View style={[styles.recentListingsSection, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionHeader, { color: colors.primary }]}>Recent Listings</Text>
+          <View style={[styles.recentListingsSection, { backgroundColor: colors.background }]}>
+          <Text style={[styles.sectionHeader, { color: colors.primary, marginLeft: 16 }]}>Recent Listings</Text>
           <FlatList
             data={listings}
             keyExtractor={(item) => item.id}
@@ -306,7 +306,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
           </View>
 
         {/* Reviews section */}
-        <View style={[styles.reviewsSection, { backgroundColor: colors.card }]}>
+        <View style={[styles.reviewsSection, { backgroundColor: colors.background }]}>
             <View style={styles.reviewsHeaderRow}>
                 <Text style={[styles.sectionHeader2, { color: colors.primary }]}>Reviews</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Leave Review', { userId, userName: profileUser?.name })}>
