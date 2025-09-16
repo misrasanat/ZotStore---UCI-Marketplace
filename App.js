@@ -50,7 +50,7 @@ function Navigation() {
             <Stack.Screen name="Inbox Screen" component={InboxScreen} options={{headerShown: false}} />
             <Stack.Screen name="Chat Screen" component={ChatScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User" component={OtherUserProfileScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: true, title: 'Leave a Review'}} />
+            <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: false, title: 'Leave a Review'}} />
             <Stack.Screen name="All Reviews" component={AllReviewsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
