@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth } from './firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ThemeContext = createContext();
 
@@ -19,23 +20,29 @@ export const ThemeProvider = ({ children }) => {
   const user = auth.currentUser;
   const uid = user?.uid;
 
-  // Load theme preference from Firestore
+  // Load theme preference from AsyncStorage and Firestore
   useEffect(() => {
     const loadThemePreference = async () => {
-      if (!uid) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        const db = getFirestore();
-        const userRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          const themePreference = userData?.settings?.theme?.isDarkMode ?? false;
-          setIsDarkMode(themePreference);
+        // First try to load from AsyncStorage for immediate response
+        const storedTheme = await AsyncStorage.getItem('themePreference');
+        if (storedTheme !== null) {
+          setIsDarkMode(JSON.parse(storedTheme));
+        }
+
+        // Then load from Firestore if user is logged in
+        if (uid) {
+          const db = getFirestore();
+          const userRef = doc(db, 'users', uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const themePreference = userData?.settings?.theme?.isDarkMode ?? false;
+            setIsDarkMode(themePreference);
+            // Update AsyncStorage with Firestore value
+            await AsyncStorage.setItem('themePreference', JSON.stringify(themePreference));
+          }
         }
       } catch (error) {
         console.error('Failed to load theme preference:', error);
@@ -47,23 +54,27 @@ export const ThemeProvider = ({ children }) => {
     loadThemePreference();
   }, [uid]);
 
-  // Save theme preference to Firestore
+  // Save theme preference to both AsyncStorage and Firestore
   const toggleTheme = async () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
 
-    if (!uid) return;
-
     try {
-      const db = getFirestore();
-      const userRef = doc(db, 'users', uid);
-      await setDoc(userRef, { 
-        settings: { 
-          theme: { 
-            isDarkMode: newTheme 
+      // Always save to AsyncStorage
+      await AsyncStorage.setItem('themePreference', JSON.stringify(newTheme));
+
+      // Save to Firestore if user is logged in
+      if (uid) {
+        const db = getFirestore();
+        const userRef = doc(db, 'users', uid);
+        await setDoc(userRef, { 
+          settings: { 
+            theme: { 
+              isDarkMode: newTheme 
+            } 
           } 
-        } 
-      }, { merge: true });
+        }, { merge: true });
+      }
     } catch (error) {
       console.error('Failed to save theme preference:', error);
     }
@@ -80,7 +91,7 @@ export const ThemeProvider = ({ children }) => {
       primary2: '#0C2340',
       primary3: '#ffffff',
       buttonBackground: '#0C2340',
-      
+      smallReviewCard: '#f5f5f5',
       // Text colors
       text: '#495057',
       textSecondary: '#6c757d',
@@ -124,6 +135,7 @@ export const ThemeProvider = ({ children }) => {
       primary2: '#1e1e1e',
       primary3: '#bb86fc',
       buttonBackground: '#3d3a3aff',
+      smallReviewCard: '#f5f5f5',
       
       // Text colors
       text: '#ffffff',
