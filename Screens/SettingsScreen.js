@@ -151,44 +151,48 @@ export default function SettingsScreen({ navigation }) {
         </View>
 
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Notifications - Coming Soon</Text>
-          <View style={styles.rowBetween}>
+          <View style={styles.sectionTitleContainer}>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Notifications</Text>
+            <Text style={[styles.comingSoonBadge, { backgroundColor: colors.primary, color: colors.textLight }]}>Coming Soon</Text>
+          </View>
+          <View style={[styles.rowBetween, { opacity: 0.5 }]}>
             <Text style={[styles.label, { color: colors.text }]}>Enable Notifications</Text>
             <Switch 
-              value={notifEnabled} 
-              onValueChange={onToggleMasterNotif}
+              value={false}
+              onValueChange={() => {}}
+              disabled={true}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={notifEnabled ? colors.buttonText : colors.text}
+              thumbColor={colors.text}
             />
           </View>
-          <View style={styles.rowBetween}>
+          <View style={[styles.rowBetween, { opacity: 0.5 }]}>
             <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Chat</Text>
             <Switch 
-              value={notifChat && notifEnabled} 
-              onValueChange={onToggleChat} 
-              disabled={!notifEnabled}
+              value={false}
+              onValueChange={() => {}}
+              disabled={true}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={notifChat && notifEnabled ? colors.buttonText : colors.text}
+              thumbColor={colors.text}
             />
           </View>
-          <View style={styles.rowBetween}>
+          <View style={[styles.rowBetween, { opacity: 0.5 }]}>
             <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Listings</Text>
             <Switch 
-              value={notifListings && notifEnabled} 
-              onValueChange={onToggleListings} 
-              disabled={!notifEnabled}
+              value={false}
+              onValueChange={() => {}}
+              disabled={true}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={notifListings && notifEnabled ? colors.buttonText : colors.text}
+              thumbColor={colors.text}
             />
           </View>
-          <View style={styles.rowBetween}>
+          <View style={[styles.rowBetween, { opacity: 0.5 }]}>
             <Text style={[styles.subLabel, { color: colors.textSecondary }]}>Reviews</Text>
             <Switch 
-              value={notifReviews && notifEnabled} 
-              onValueChange={onToggleReviews} 
-              disabled={!notifEnabled}
+              value={false}
+              onValueChange={() => {}}
+              disabled={true}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={notifReviews && notifEnabled ? colors.buttonText : colors.text}
+              thumbColor={colors.text}
             />
           </View>
         </View>
@@ -265,6 +269,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2c5aa0',
     marginBottom: 12,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  comingSoonBadge: {
+    fontSize: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginLeft: 8,
   },
   rowBetween: {
     flexDirection: 'row',

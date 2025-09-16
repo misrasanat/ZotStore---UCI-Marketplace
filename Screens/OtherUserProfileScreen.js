@@ -325,7 +325,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
                 </View>
                 
                 {reviews.map((review) => (
-                  <View key={review.id} style={styles.reviewCard}>
+                  <View key={review.id} style={[styles.reviewCard,]}>
                     <Text style={styles.reviewText}>
                       {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)} "{review.comment}"
                     </Text>
