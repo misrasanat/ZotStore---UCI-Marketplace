@@ -104,7 +104,7 @@ const HomeScreen = ({ navigation, route }) => {
                             style={{ width: '100%', height: '100%', borderRadius: 22 }}
                         />
                         ) : (
-                        <Feather name="user" size={24} color={colors.textLight} />
+                        <Feather name="user-check" size={24} color={colors.textLight} />
                         )}
                     </TouchableOpacity>
                     </View>
@@ -243,8 +243,8 @@ const HomeScreen = ({ navigation, route }) => {
                 animationIn="slideInUp"
                 animationOut="slideOutDown"
             >
-                <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Select Categories</Text>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>Select Categories</Text>
                     <ScrollView>
                         {categories.map((category) => (
                             <TouchableOpacity
@@ -258,13 +258,14 @@ const HomeScreen = ({ navigation, route }) => {
                             >
                                 <Text style={[
                                     styles.categoryText,
+                                    { color: colors.text },
                                     selectedCategories.includes(category.value) && 
-                                    styles.categoryTextSelected
+                                    { color: colors.primary, fontWeight: '600' }
                                 ]}>
                                     {category.label}
                                 </Text>
                                 {selectedCategories.includes(category.value) && (
-                                    <Feather name="check" size={20} color="#0C2340" />
+                                    <Feather name="check" size={20} color={colors.primary} />
                                 )}
                             </TouchableOpacity>
                         ))}
@@ -283,7 +284,6 @@ const extraStyles = {
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
@@ -293,7 +293,6 @@ const extraStyles = {
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 15,
-        color: '#0C2340',
         textAlign: 'center',
     },
     categoryItem: {
@@ -302,19 +301,12 @@ const extraStyles = {
         justifyContent: 'space-between',
         paddingVertical: 12,
         paddingHorizontal: 16,
-        borderRadius: 8,
-        marginVertical: 4,
     },
     categoryItemSelected: {
-        backgroundColor: '#F0F0F0',
+        // Empty - we're not using background color anymore
     },
     categoryText: {
         fontSize: 16,
-        color: '#333',
-    },
-    categoryTextSelected: {
-        color: '#0C2340',
-        fontWeight: '600',
     },
     filterTagsContainer: {
         paddingHorizontal: 16,

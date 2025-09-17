@@ -67,7 +67,11 @@ const InboxScreen = ({ navigation }) => {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card }]}
+      style={[
+        styles.card, 
+        { backgroundColor: colors.card },
+        item.unreadCount > 0 && { backgroundColor: colors.surface }  // Subtle background for unread
+      ]}
       onPress={async () => {
         const auth = getAuth();
         const currentUser = auth.currentUser;
@@ -85,10 +89,8 @@ const InboxScreen = ({ navigation }) => {
         {item.avatar ? (
           <Image source={{ uri: item.avatar }} style={styles.avatar} />
         ) : (
-          <View style={[styles.avatarFallback, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.avatarFallbackText, { color: colors.textLight }]}>
-              {item.user.charAt(0).toUpperCase()}
-            </Text>
+          <View style={[styles.avatarFallback, { backgroundColor: colors.surface }]}>
+            <Feather name="user-check" size={24} color={colors.textSecondary} />
           </View>
         )}
       </View>
@@ -97,7 +99,7 @@ const InboxScreen = ({ navigation }) => {
           <Text style={[
             styles.username,
             { color: colors.text },
-            item.unreadCount > 0 && styles.unreadText
+            item.unreadCount > 0 && { fontWeight: 'bold', color: colors.text, fontSize: 17 }  // Bold, slightly larger, and ensure text color
           ]} numberOfLines={1}>{item.user}</Text>
           <Text style={[styles.time, { color: colors.textSecondary }]}>{item.timestamp}</Text>
         </View>
@@ -106,7 +108,7 @@ const InboxScreen = ({ navigation }) => {
             style={[
               styles.message,
               { color: colors.textSecondary },
-              item.unreadCount > 0 && styles.unreadText
+              item.unreadCount > 0 && { fontWeight: '600', color: colors.text }  // Semi-bold and main text color for unread
             ]} 
             numberOfLines={1}
           >
@@ -155,7 +157,7 @@ const InboxScreen = ({ navigation }) => {
               id: docSnap.id,
               user: userData.name || 'Unknown',
               userId: otherUserId,
-              avatar: userData.profilePic || 'https://i.pravatar.cc/150?img=1',
+              avatar: userData.profilePic, // Remove the fallback URL
               lastMessage: data.lastMessage?.text || '',
               timestamp: formatMessageTimestamp(data.lastMessage?.timestamp),
               unreadCount: unreadCount,

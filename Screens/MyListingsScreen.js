@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, TextInput } from 'react-native';
 import { db } from '../firebase';
-import { getDoc, doc, collection, getDocs } from 'firebase/firestore';
+import { getDoc, doc, collection, getDocs, query, where } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
@@ -39,19 +39,17 @@ const MyListingsScreen = ({ navigation }) => {
 
                 if (!user) return;
 
-                const userListingsSnapshot = await getDocs(collection(db, `users/${user.uid}/listings`));
-                const listings = [];
-
-                for (const docSnap of userListingsSnapshot.docs) {
-                    const { listingId } = docSnap.data();
-                    const listingDoc = await getDoc(doc(db, 'listings', listingId));
-                    if (listingDoc.exists()) {
-                        listings.push({
-                            id: listingDoc.id,
-                            ...listingDoc.data()
-                        });
-                    }
-                }
+                // Single query to get all listings for the current user
+                const listingsQuery = query(
+                    collection(db, 'listings'),
+                    where('userId', '==', user.uid)
+                );
+                
+                const querySnapshot = await getDocs(listingsQuery);
+                const listings = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
 
                 const currentListings = listings.filter(l => l.status === 'active');
                 const pastListings = listings.filter(l => l.status === 'past');
@@ -132,7 +130,7 @@ const MyListingsScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
                 <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
@@ -242,13 +240,10 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
     },
     card: {
         backgroundColor: '#fff',
         borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#E8E8E8',
         overflow: 'hidden',
     },
     cardImage: {
