@@ -160,12 +160,16 @@ const ViewListingScreen = ({ route, navigation }) => {
               onPress={() => navigation.navigate('Other User', { userId: item.userId })}
               activeOpacity={0.7}
             >
-              <Image
-                source={{
-                  uri: sellerInfo?.profilePic || 'https://i.pravatar.cc/150?img=12'
-                }}
-                style={styles.profileImage}
-              />
+              {sellerInfo?.profilePic ? (
+                <Image
+                  source={{ uri: sellerInfo.profilePic }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <View style={[styles.profileImagePlaceholder, { backgroundColor: colors.surface }]}>
+                  <Icon name="user-check" size={30} color={colors.textSecondary} />
+                </View>
+              )}
               <View style={styles.profileText}>
             {sellerInfo ? (
               <>
@@ -330,7 +334,17 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginRight: 16,
   },
-  profileInfo: {
+  profileImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  profileText: {
     flex: 1,
   },
   profileName: {

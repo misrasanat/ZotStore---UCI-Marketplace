@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './Screens/CustomNavbar.js';
 import { uploadToCloudinary } from './utils/cloudinary';
 import { useTheme } from './ThemeContext';
+import Feather from 'react-native-vector-icons/Feather';
 
 export default function Profile({ navigation }) {
   const [profilePic, setProfilePic] = useState(null);
@@ -239,13 +240,6 @@ export default function Profile({ navigation }) {
           // keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
         >
           <ScrollView
-            // style={styles.scrollView}
-            // contentContainerStyle={styles.scrollContainer}
-            // keyboardShouldPersistTaps="handled"
-            // showsVerticalScrollIndicator={false}
-            // bounces={true}
-            // scrollEventThrottle={16}
-
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled" 
               keyboardDismissMode="interactive"
@@ -253,14 +247,29 @@ export default function Profile({ navigation }) {
               nestedScrollEnabled={true}  // ✅ Add this
           >
             <View style={[styles.container, { backgroundColor: colors.background }]}>
+              {/* Back Button Header */}
+              <View style={styles.headerContainer}>
+                <TouchableOpacity 
+                  onPress={() => navigation.goBack()}
+                  style={styles.backButton}
+                >
+                  <Feather name="arrow-left" size={24} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
               {/* Profile Picture & Name */}
               <View style={styles.headerSection}>
                 <TouchableOpacity onPress={pickImage}>
-                  <Image
-                    source={profilePic ? { uri: profilePic } : require('./assets/icon.png')}
-                    style={styles.avatar}
-                    defaultSource={require('./assets/icon.png')}
-                  />
+                  {profilePic ? (
+                    <Image
+                      source={{ uri: profilePic }}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <View style={[styles.avatarFallback, { backgroundColor: colors.surface }]}>
+                      <Feather name="user-check" size={40} color={colors.textSecondary} />
+                    </View>
+                  )}
                   {isEditing && <Text style={[styles.editPhotoText, { color: colors.text }]}>Edit Photo</Text>}
                 </TouchableOpacity>
                 {isEditing ? (
@@ -608,6 +617,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
   },  
+  headerContainer: {
+    width: '100%',
+    paddingTop: 16,
+    marginBottom: -16,
+    paddingLeft: 0,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+  },
   headerSection: {
     alignItems: 'center',
     marginBottom: 32,
@@ -618,6 +640,15 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: '#e9ecef',
     marginBottom: 8,
+  },
+  avatarFallback: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dee2e6',
   },
   editPhotoText: {
     color: '#2c5aa0',
