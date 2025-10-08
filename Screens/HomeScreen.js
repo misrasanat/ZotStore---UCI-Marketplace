@@ -3,7 +3,7 @@ import styles from './HomeScreen.styles';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { db } from '../firebase';
-import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where, doc, getDoc } from 'firebase/firestore';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
 import { useAuth } from '../AuthContext';
@@ -15,6 +15,7 @@ const HomeScreen = ({ navigation, route }) => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [filterVisible, setFilterVisible] = useState(false);
+    const [blockedUsers, setBlockedUsers] = React.useState([]);
     const { userProfile } = useAuth();
     const { colors } = useTheme();
     const isUCIVerified = userProfile?.email?.toLowerCase().endsWith('@uci.edu') && userProfile?.isVerified;
@@ -34,11 +35,33 @@ const HomeScreen = ({ navigation, route }) => {
         { label: 'Other', value: 'other' }
     ];
     
-    // Filter items based on search query and selected categories
+    // Fetch blocked users list
+    React.useEffect(() => {
+        const fetchBlockedUsers = async () => {
+            if (!userProfile?.uid) return;
+            try {
+                const userRef = doc(db, 'users', userProfile.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    const blocked = userData.blockedUsers || [];
+                    const blockedBy = userData.blockedBy || [];
+                    // Combine both arrays to filter out all blocked interactions
+                    setBlockedUsers([...blocked, ...blockedBy]);
+                }
+            } catch (error) {
+                console.error('Error fetching blocked users:', error);
+            }
+        };
+        fetchBlockedUsers();
+    }, [userProfile?.uid]);
+    
+    // Filter items based on search query, selected categories, and blocked users
     const filteredItems = items.filter((item) => {
         const matchesSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(item.category);
-        return matchesSearch && matchesCategory;
+        const notBlocked = !blockedUsers.includes(item.userId);
+        return matchesSearch && matchesCategory && notBlocked;
     });
 
     React.useEffect(() => {

@@ -4,6 +4,7 @@ import {View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardA
 import { db } from '../firebase';
 import { collection, addDoc, doc, query, orderBy, onSnapshot, setDoc, getDoc, serverTimestamp, updateDoc, increment } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from '../AuthContext';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,14 +19,67 @@ const ChatScreen = ({route, navigation}) => {
   const [newMsg, setNewMsg] = useState('');
   const [receiverInfo, setReceiverInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isBlocked, setIsBlocked] = useState(false);
   const flatListRef = useRef(null);
   const headerHeight = useHeaderHeight();
   const [bottomPadding, setBottomPadding] = useState(60);
   const { refreshUnreadStatus } = useUnread();
   const { colors } = useTheme();
+  const { user: currentUser } = useAuth();
+
+  const checkBlockingStatus = async () => {
+    const auth = getAuth();
+    const authUser = auth.currentUser;
+    const receiverId = route.params.userId;
+    
+    if (!authUser) return;
+    
+    try {
+      // Check if current user is blocked by receiver or vice versa
+      const currentUserRef = doc(db, 'users', authUser.uid);
+      const receiverRef = doc(db, 'users', receiverId);
+      
+      const [currentUserSnap, receiverSnap] = await Promise.all([
+        getDoc(currentUserRef),
+        getDoc(receiverRef)
+      ]);
+      
+      let blocked = false;
+      
+      if (currentUserSnap.exists()) {
+        const currentUserData = currentUserSnap.data();
+        const blockedUsers = currentUserData.blockedUsers || [];
+        const blockedBy = currentUserData.blockedBy || [];
+        if (blockedUsers.includes(receiverId) || blockedBy.includes(receiverId)) {
+          blocked = true;
+        }
+      }
+      
+      if (receiverSnap.exists() && !blocked) {
+        const receiverData = receiverSnap.data();
+        const blockedUsers = receiverData.blockedUsers || [];
+        if (blockedUsers.includes(authUser.uid)) {
+          blocked = true;
+        }
+      }
+      
+      setIsBlocked(blocked);
+      
+      if (blocked) {
+        // Show default receiver info
+        setReceiverInfo({
+          name: 'ZotStore User',
+          profilePic: null
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error checking blocking status:', error);
+    }
+  };
 
   const handleSend = async () => {
-    if (!newMsg.trim()) return;
+    if (!newMsg.trim() || isBlocked) return;
 
     const auth = getAuth();
     const currentUser = auth.currentUser;
@@ -92,9 +146,12 @@ const ChatScreen = ({route, navigation}) => {
   // Clear unread messages when opening chat
   useEffect(() => {
     const auth = getAuth();
-    const currentUser = auth.currentUser;
+    const authUser = auth.currentUser;
     const receiverId = route.params.userId;
-    const chatId = [currentUser.uid, receiverId].sort().join('_');
+    
+    if (!authUser) return;
+    
+    const chatId = [authUser.uid, receiverId].sort().join('_');
     
     const clearUnread = async () => {
       try {
@@ -104,16 +161,16 @@ const ChatScreen = ({route, navigation}) => {
         if (chatDoc.exists()) {
           // Reset unread count for current user
           await updateDoc(chatRef, {
-            [`unreadCount.${currentUser.uid}`]: 0
+            [`unreadCount.${authUser.uid}`]: 0
           });
           // Refresh the unread status immediately
           refreshUnreadStatus();
         } else {
           // Initialize chat document if it doesn't exist
           await setDoc(chatRef, {
-            participants: [currentUser.uid, receiverId],
+            participants: [authUser.uid, receiverId],
             unreadCount: {
-              [currentUser.uid]: 0,
+              [authUser.uid]: 0,
               [receiverId]: 0
             },
             lastMessage: null
@@ -129,19 +186,26 @@ const ChatScreen = ({route, navigation}) => {
 
   useEffect(() => {
     const auth = getAuth();
-    const currentUser = auth.currentUser;
+    const authUser = auth.currentUser;
     const receiverId = route.params.userId;
-    const chatId = [currentUser.uid, receiverId].sort().join('_');
+    
+    if (!authUser) return;
+    
+    const chatId = [authUser.uid, receiverId].sort().join('_');
+    
+    checkBlockingStatus();
+    
     // Mark as read when chat is opened
     const chatRef = doc(db, 'chats', chatId);
     updateDoc(chatRef, {
-      [`unreadCount.${currentUser.uid}`]: 0
+      [`unreadCount.${authUser.uid}`]: 0
     }).then(() => {
       // Refresh the unread status immediately
       refreshUnreadStatus();
     }).catch(error => {
       console.error('Error clearing unread count:', error);
     });
+    
     const showSub = Keyboard.addListener('keyboardDidShow', () => setBottomPadding(0));
     const hideSub = Keyboard.addListener('keyboardDidHide', () => setBottomPadding(30));
 
@@ -152,7 +216,7 @@ const ChatScreen = ({route, navigation}) => {
       try {
         const receiverRef = doc(db, 'users', receiverId);
         const receiverSnap = await getDoc(receiverRef);
-        if (receiverSnap.exists()) {
+        if (receiverSnap.exists() && !isBlocked) {
           setReceiverInfo(receiverSnap.data());
           setLoading(false);
         }
@@ -162,20 +226,23 @@ const ChatScreen = ({route, navigation}) => {
     };
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), fromSelf: doc.data().senderUid === currentUser.uid }));
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), fromSelf: doc.data().senderUid === authUser.uid }));
       setMessages(msgs);
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100); // gives React time to render
     });
 
-    fetchReceiver();
+    if (!isBlocked) {
+      fetchReceiver();
+    }
+    
     return () => {
       showSub.remove();
       hideSub.remove();
       unsubscribe();
     };
-  }, []);
+  }, [isBlocked]);
 
   useEffect(() => {
     // Scroll to bottom when messages change or when first loading
@@ -235,18 +302,26 @@ const ChatScreen = ({route, navigation}) => {
         )}
         
 
-        <View style={[styles.inputRow, { backgroundColor: colors.background }]}>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.placeholder}
-            value={newMsg}
-            onChangeText={setNewMsg}
-          />
-          <TouchableOpacity onPress={handleSend} style={[styles.sendButton, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.sendText, { color: colors.textLight }]}>➤</Text>
-          </TouchableOpacity>
-        </View>
+        {isBlocked ? (
+          <View style={[styles.blockedContainer, { backgroundColor: colors.background }]}>
+            <Text style={[styles.blockedText, { color: colors.textSecondary }]}>
+              You cannot send messages to this user.
+            </Text>
+          </View>
+        ) : (
+          <View style={[styles.inputRow, { backgroundColor: colors.background }]}>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.placeholder}
+              value={newMsg}
+              onChangeText={setNewMsg}
+            />
+            <TouchableOpacity onPress={handleSend} style={[styles.sendButton, { backgroundColor: colors.primary }]}>
+              <Text style={[styles.sendText, { color: colors.textLight }]}>➤</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         </KeyboardAvoidingView>
         <SafeAreaView  edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary2 }]}>
           <CustomNavBar />
@@ -354,6 +429,15 @@ const ChatScreen = ({route, navigation}) => {
           color: '#444',
           fontWeight: '600',
           textAlign: 'center',
+      },
+      blockedContainer: {
+        padding: 20,
+        alignItems: 'center',
+        borderTopWidth: 1,
+      },
+      blockedText: {
+        fontSize: 14,
+        fontStyle: 'italic',
       },
   });
   

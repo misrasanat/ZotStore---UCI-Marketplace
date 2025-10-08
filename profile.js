@@ -572,6 +572,12 @@ export default function Profile({ navigation }) {
                     <TouchableOpacity style={[styles.settingsButton, { backgroundColor: colors.buttonBackground, borderColor: '#3d3a3aff'  }]} onPress={handleAdditionalSettings}>
                       <Text style={[styles.settingsText, { color: colors.primary3}]}>Additional Settings</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.settingsButton, { backgroundColor: colors.buttonBackground, borderColor: '#3d3a3aff', marginTop: 10 }]} 
+                      onPress={() => navigation.navigate('Blocked Users')}
+                    >
+                      <Text style={[styles.settingsText, { color: colors.primary3}]}>Blocked Users</Text>
+                    </TouchableOpacity>
                   </>
                 )}
               </View>
