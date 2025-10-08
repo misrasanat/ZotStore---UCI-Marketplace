@@ -1,6 +1,6 @@
 import React, { useState, useEffect }  from 'react';
 import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, ScrollView, Modal, TextInput, Alert, KeyboardAvoidingView, Platform} from 'react-native';
-import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, addDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, where, orderBy, limit, addDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,8 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [isBlockLoading, setIsBlockLoading] = useState(false);
   
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState('');
@@ -85,6 +87,23 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
     setReportModalVisible(false);
   };
 
+  const checkIfBlockedByOther = async () => {
+    if (!currentUser?.uid || !userProfile) return false;
+    try {
+      const otherUserRef = doc(db, 'users', userId);
+      const otherUserSnap = await getDoc(otherUserRef);
+      if (otherUserSnap.exists()) {
+        const userData = otherUserSnap.data();
+        const blockedUsers = userData.blockedUsers || [];
+        return blockedUsers.includes(currentUser.uid);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking if blocked by other:', error);
+      return false;
+    }
+  };
+
   const fetchUserProfile = async () => {
     try {
       const userRef = doc(db, 'users', userId);
@@ -92,7 +111,22 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       if (userSnap.exists()) {
         const userData = userSnap.data();
         console.log('Fetched user data:', userData);
-        setProfileUser(userData);
+        
+        // Check if blocked by the other user
+        const blockedByOther = await checkIfBlockedByOther();
+        
+        if (blockedByOther) {
+          // Show default profile if blocked by other user
+          setProfileUser({
+            name: 'ZotStore User',
+            email: 'user@example.com',
+            bio: 'This user prefers to keep their information private.',
+            profilePic: null,
+            // Don't show any other personal information
+          });
+        } else {
+          setProfileUser(userData);
+        }
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -145,12 +179,71 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
     }
   };
 
+  const checkBlockStatus = async () => {
+    if (!currentUser?.uid || !userProfile) return;
+    try {
+      const currentUserRef = doc(db, 'users', currentUser.uid);
+      const currentUserSnap = await getDoc(currentUserRef);
+      if (currentUserSnap.exists()) {
+        const userData = currentUserSnap.data();
+        const blockedUsers = userData.blockedUsers || [];
+        setIsBlocked(blockedUsers.includes(userId));
+      }
+    } catch (error) {
+      console.error('Error checking block status:', error);
+    }
+  };
+
+  const handleBlockUser = async () => {
+    // Prevent self-blocking
+    if (currentUser?.uid === userId) {
+      Alert.alert('Error', "You can't block yourself.");
+      return;
+    }
+
+    if (isBlockLoading) return;
+    setIsBlockLoading(true);
+
+    try {
+      const currentUserRef = doc(db, 'users', currentUser.uid);
+      const otherUserRef = doc(db, 'users', userId);
+      
+      if (isBlocked) {
+        // Unblock user - remove from both arrays
+        await updateDoc(currentUserRef, {
+          blockedUsers: arrayRemove(userId)
+        });
+        await updateDoc(otherUserRef, {
+          blockedBy: arrayRemove(currentUser.uid)
+        });
+        setIsBlocked(false);
+        Alert.alert('Success', `${profileUser?.name || 'User'} has been unblocked.`);
+      } else {
+        // Block user - add to both arrays
+        await updateDoc(currentUserRef, {
+          blockedUsers: arrayUnion(userId)
+        });
+        await updateDoc(otherUserRef, {
+          blockedBy: arrayUnion(currentUser.uid)
+        });
+        setIsBlocked(true);
+        Alert.alert('Success', `${profileUser?.name || 'User'} has been blocked.`);
+      }
+    } catch (error) {
+      console.error('Error updating block status:', error);
+      Alert.alert('Error', 'Failed to update block status. Please try again.');
+    } finally {
+      setIsBlockLoading(false);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     if (userId) {
       fetchUserProfile();
       fetchUserListings();
       fetchUserReviews();
+      checkBlockStatus();
     }
   }, [userId]);
 
@@ -160,6 +253,7 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       if (userId) {
         fetchUserProfile();
         fetchUserReviews();
+        checkBlockStatus();
       }
     }, [userId])
   );
@@ -180,9 +274,24 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
   return (
     <View style={[styles.screenWrapper, { backgroundColor: colors.background }]}>
       <SafeAreaView edges={['top']} style={[styles.safeTop, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={24} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="arrow-left" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleBlockUser} 
+            style={[
+              styles.blockButton, 
+              { backgroundColor: isBlocked ? colors.textSecondary : colors.error }
+            ]}
+            disabled={isBlockLoading}
+          >
+            <Text style={[styles.blockButtonText, { color: colors.textLight }]}
+            >
+              {isBlockLoading ? 'Loading...' : (isBlocked ? 'Unblock' : 'Block')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
       <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
         {/* Profile Info */}
@@ -446,16 +555,24 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
       safeTop: {
         backgroundColor: '#fff',
       },
-      backButton: {
-        marginTop: 10,
-        marginLeft: 20,
-        zIndex: 10,
+      headerButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 10,
       },
-      backIcon: {
-        color: '#194a7a',
-        fontSize: 40,
-        fontWeight: 'bold',
-        paddingTop: 15,
+      backButton: {
+        padding: 8,
+      },
+      blockButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 6,
+      },
+      blockButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
       },
       bioBox: {
         marginTop: 24,

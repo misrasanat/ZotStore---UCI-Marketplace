@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, getDoc, doc, serverTimestamp, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, serverTimestamp, updateDoc, onSnapshot, orderBy } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { useAuth } from '../AuthContext';
 import { formatRelative } from 'date-fns';
 import {
   View,
@@ -12,7 +13,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useUnread } from '../UnreadContext'; // adjust path as needed
+import { useUnread } from '../UnreadContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomNavBar from './CustomNavbar.js';
 import Feather from 'react-native-vector-icons/Feather';
@@ -60,9 +61,11 @@ const isNewMessage = (timestamp) => {
 };
 
 const InboxScreen = ({ navigation }) => {
-  const [conversations, setConversations] = useState([]);
+  const [chats, setChats] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { refreshUnreadStatus } = useUnread();
+  const { user: currentUser } = useAuth();
+  const { unreadCount, refreshUnreadStatus } = useUnread();
   const { colors } = useTheme();
 
   const renderItem = ({ item }) => (
@@ -70,24 +73,23 @@ const InboxScreen = ({ navigation }) => {
       style={[
         styles.card, 
         { backgroundColor: colors.card },
-        item.unreadCount > 0 && { backgroundColor: colors.surface }  // Subtle background for unread
+        item.unreadCount > 0 && { backgroundColor: colors.surface }
       ]}
       onPress={async () => {
         const auth = getAuth();
-        const currentUser = auth.currentUser;
+        const authUser = auth.currentUser;
         const chatRef = doc(db, 'chats', item.id);
         await updateDoc(chatRef, {
-          [`unreadCount.${currentUser.uid}`]: 0
+          [`unreadCount.${authUser.uid}`]: 0
         });
-        // Refresh the unread status immediately
         refreshUnreadStatus();
-        navigation.navigate('Chat Screen', { userId: item.userId });
+        navigation.navigate('Chat Screen', { userId: item.otherUserId });
       }}
       activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        {item.otherUser?.profilePic ? (
+          <Image source={{ uri: item.otherUser.profilePic }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatarFallback, { backgroundColor: colors.surface }]}>
             <Feather name="user-check" size={24} color={colors.textSecondary} />
@@ -99,25 +101,27 @@ const InboxScreen = ({ navigation }) => {
           <Text style={[
             styles.username,
             { color: colors.text },
-            item.unreadCount > 0 && { fontWeight: 'bold', color: colors.text, fontSize: 17 }  // Bold, slightly larger, and ensure text color
-          ]} numberOfLines={1}>{item.user}</Text>
-          <Text style={[styles.time, { color: colors.textSecondary }]}>{item.timestamp}</Text>
+            (item.unreadCount?.[currentUser?.uid] || 0) > 0 && { fontWeight: 'bold', fontSize: 17 }
+          ]} numberOfLines={1}>{item.otherUser?.name || 'Unknown User'}</Text>
+          <Text style={[styles.time, { color: colors.textSecondary }]}>
+            {formatMessageTimestamp(item.lastMessage?.timestamp)}
+          </Text>
         </View>
         <View style={styles.messageRow}>
           <Text 
             style={[
               styles.message,
               { color: colors.textSecondary },
-              item.unreadCount > 0 && { fontWeight: '600', color: colors.text }  // Semi-bold and main text color for unread
+              (item.unreadCount?.[currentUser?.uid] || 0) > 0 && { fontWeight: '600', color: colors.text }
             ]} 
             numberOfLines={1}
           >
-            {item.lastMessage || 'No messages yet'}
+            {item.lastMessage?.text || 'No messages yet'}
           </Text>
-          {item.unreadCount > 0 && (
+          {(item.unreadCount?.[currentUser?.uid] || 0) > 0 && (
             <View style={[styles.badge, { backgroundColor: colors.error }]}>
               <Text style={[styles.badgeText, { color: colors.textLight }]}>
-                {item.unreadCount}
+                {item.unreadCount[currentUser.uid]}
               </Text>
             </View>
           )}
@@ -127,70 +131,74 @@ const InboxScreen = ({ navigation }) => {
   );
 
   useEffect(() => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
+    const fetchBlockedUsers = async () => {
+      if (!currentUser?.uid) return;
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const blocked = userData.blockedUsers || [];
+          const blockedBy = userData.blockedBy || [];
+          setBlockedUsers([...blocked, ...blockedBy]);
+        }
+      } catch (error) {
+        console.error('Error fetching blocked users:', error);
+      }
+    };
+
+    fetchBlockedUsers();
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
     if (!currentUser) return;
 
-    const chatsRef = collection(db, 'chats');
-    const q = query(chatsRef, where('participants', 'array-contains', currentUser.uid));
-
+    const q = query(collection(db, 'chats'), orderBy('lastMessage.timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      try {
-        const convoList = [];
+      setLoading(true);
+      const chatList = [];
+      
+      for (const docSnap of snapshot.docs) {
+        const chatData = docSnap.data();
+        if (!chatData.participants || !chatData.participants.includes(currentUser.uid)) continue;
         
-        for (const docSnap of snapshot.docs) {
-          const data = docSnap.data() || {};
-          const participants = Array.isArray(data.participants) ? data.participants : [];
-          let otherUserId = participants.find(uid => uid !== currentUser.uid);
-          if (!otherUserId && participants.length === 1 && participants[0] === currentUser.uid) {
-            otherUserId = currentUser.uid;
-          }
-          if (!otherUserId) continue; 
-          const userRef = doc(db, 'users', otherUserId);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            const unreadCount = data.unreadCount?.[currentUser.uid] || 0;
-            
-            convoList.push({
-              id: docSnap.id,
-              user: userData.name || 'Unknown',
-              userId: otherUserId,
-              avatar: userData.profilePic, // Remove the fallback URL
-              lastMessage: data.lastMessage?.text || '',
-              timestamp: formatMessageTimestamp(data.lastMessage?.timestamp),
-              unreadCount: unreadCount,
-              isNew: isNewMessage(data.lastMessage?.timestamp),
-              rawTimestamp: data.lastMessage?.timestamp
-            });
-          }
-        }
-
-        convoList.sort((a, b) => {
-          if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
-          if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+        const otherUserId = chatData.participants.find(id => id !== currentUser.uid);
+        
+        // Skip if user is blocked - add null check
+        if (blockedUsers && blockedUsers.length > 0 && blockedUsers.includes(otherUserId)) continue;
+        
+        try {
+          const otherUserRef = doc(db, 'users', otherUserId);
+          const otherUserSnap = await getDoc(otherUserRef);
           
-          const aTime = a.rawTimestamp?.toDate?.() || new Date(0);
-          const bTime = b.rawTimestamp?.toDate?.() || new Date(0);
-          return bTime - aTime;
-        });
-
-        setConversations(convoList);
-      } catch (error) {
-        console.error('Error in real-time update:', error);
-      } finally {
-        setLoading(false);
+          let otherUserData = { name: 'Unknown User', profilePic: null };
+          if (otherUserSnap.exists()) {
+            const userData = otherUserSnap.data();
+            // Check if blocked by other user - add null check
+            const otherUserBlockedUsers = userData.blockedUsers || [];
+            if (otherUserBlockedUsers.includes(currentUser.uid)) {
+              continue; // Skip this chat if blocked by other user
+            }
+            otherUserData = userData;
+          }
+          
+          chatList.push({
+            id: docSnap.id,
+            ...chatData,
+            otherUser: otherUserData,
+            otherUserId
+          });
+        } catch (error) {
+          console.error('Error fetching other user data:', error);
+        }
       }
-    }, (error) => {
-      console.error('Real-time listener error:', error);
+      
+      setChats(chatList);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
-
-  const { hasUnread } = useUnread();
+  }, [currentUser, blockedUsers]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -202,7 +210,7 @@ const InboxScreen = ({ navigation }) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : conversations.length === 0 ? (
+      ) : chats.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Feather name="message-circle" size={50} color={colors.textSecondary} />
           <Text style={[styles.emptyText, { color: colors.text }]}>No conversations yet</Text>
@@ -212,12 +220,11 @@ const InboxScreen = ({ navigation }) => {
         </View>
       ) : (
         <FlatList
-          data={conversations}
+          data={chats}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-
         />
       )}
 

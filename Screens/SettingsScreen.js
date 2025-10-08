@@ -150,6 +150,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </View>
 
+        {/* NOTIFICATIONS SECTION - COMMENTED OUT UNTIL IMPLEMENTED
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <View style={styles.sectionTitleContainer}>
             <Text style={[styles.sectionTitle, { color: colors.primary }]}>Notifications</Text>
@@ -196,6 +197,7 @@ export default function SettingsScreen({ navigation }) {
             />
           </View>
         </View>
+        */}
 
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Privacy</Text>
