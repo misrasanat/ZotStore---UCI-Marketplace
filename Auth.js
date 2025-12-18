@@ -3,13 +3,30 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { useAuth } from './AuthContext';
-import TermsAcceptance from './components/TermsAcceptance';
 import { useTheme } from './ThemeContext';
 
 export default function Auth({ navigation }) {
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const { setGuestMode } = useAuth();
-  const { colors } = useTheme(); // Fixed: destructure colors directly, not theme
+  const { colors, loading } = useTheme();
+
+  // Debug logging
+  // Debug logging
+  console.log('Auth component - colors:', colors);
+  console.log('Auth component - loading:', loading);
+
+  // Provide fallback colors if theme is not ready
+  const safeColors = colors || {
+    background: '#ffffff',
+    primary: '#0C2340',
+    border: '#dee2e6',
+    textLight: '#ffffff',
+    text: '#495057'
+  };
+
+  // Show loading state while theme is being initialized
+  if (loading) {
+    return null; // or return a simple loading spinner
+  }
 
   const handleUCISSOLogin = async () => {
     WebBrowser.openBrowserAsync('https://login.uci.edu/ucinetid/webauth');
@@ -29,7 +46,7 @@ export default function Auth({ navigation }) {
   };
 
   return (
-    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
+    <View style={[styles.outerContainer, { backgroundColor: safeColors.background }]}>
       <View style={styles.headerAccent} />
       <View style={styles.topSection}>
         <Text style={styles.welcome}>Welcome to</Text>
@@ -46,29 +63,23 @@ export default function Auth({ navigation }) {
         <TouchableOpacity 
           style={[
             styles.emailButton,
-            { backgroundColor: colors.primary },
-            !termsAccepted && { backgroundColor: colors.border, opacity: 0.5 }
+            { backgroundColor: safeColors.primary }
           ]}
-          onPress={() => termsAccepted && handleEmailLogin()}
-          disabled={!termsAccepted}
+          onPress={handleEmailLogin}
         >
-          <Text style={[styles.emailButtonText, { color: colors.textLight }]}>
+          <Text style={[styles.emailButtonText, { color: safeColors.textLight }]}>
             Login with Email
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[
             styles.signupButton,
-            { borderColor: colors.primary },
-            !termsAccepted && { borderColor: colors.border, opacity: 0.5 }
+            { borderColor: safeColors.primary }
           ]}
-          onPress={() => termsAccepted && handleEmailSignup()}
-          disabled={!termsAccepted}
+          onPress={handleEmailSignup}
         >
           <Text style={[
-            styles.signupButtonText, 
-            { color: colors.primary },
-            !termsAccepted && { color: colors.border }
+            styles.signupButtonText
           ]}>
             Create Account (UCI)
           </Text>
@@ -77,14 +88,11 @@ export default function Auth({ navigation }) {
           style={[
             styles.signupButton, 
             styles.nonUCIButton,
-            !termsAccepted && { backgroundColor: '#ccc', opacity: 0.5 }
           ]} 
-          onPress={() => termsAccepted && navigation.navigate('SignupNonUCI')}
-          disabled={!termsAccepted}
+          onPress={() => navigation.navigate('SignupNonUCI')}
         >
           <Text style={[
-            styles.signupButtonText,
-            !termsAccepted && { color: '#999' }
+            styles.signupButtonText
           ]}>
             Create Account (Non-UCI)
           </Text>
@@ -97,11 +105,7 @@ export default function Auth({ navigation }) {
         </TouchableOpacity>
       </View>
       <View style={styles.footerAccent} />
-      <TermsAcceptance 
-        isAccepted={termsAccepted}
-        onToggle={() => setTermsAccepted(!termsAccepted)}
-        theme={{ colors }} // Fixed: pass colors as theme.colors structure
-      />
+
     </View>
   );
 }

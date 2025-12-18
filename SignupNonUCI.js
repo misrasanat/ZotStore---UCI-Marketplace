@@ -9,14 +9,13 @@ import { useTheme } from './ThemeContext';
 const SignupNonUCI = ({ navigation }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
-    const { theme } = useTheme();
+    const { colors } = useTheme();
 
     const handleSignup = async () => {
-        if (!name || !email || !password || !phone) {
+        if (!name || !email || !password) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
@@ -35,7 +34,6 @@ const SignupNonUCI = ({ navigation }) => {
             const userData = {
                 name,
                 email,
-                phone,
                 isUCIStudent: false,
                 canSell: false,
                 termsAccepted: true,
@@ -45,7 +43,7 @@ const SignupNonUCI = ({ navigation }) => {
             await setDoc(doc(db, 'users', user.uid), userData);
 
             Alert.alert('Success', 'Account created successfully!');
-            navigation.navigate('Auth');
+            // Don't navigate manually - let AuthContext handle automatic navigation
         } catch (error) {
             Alert.alert('Error', error.message);
         } finally {
@@ -54,13 +52,14 @@ const SignupNonUCI = ({ navigation }) => {
     };
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-            <TouchableOpacity 
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-            >
-                <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+        <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
+            <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Text style={styles.backButtonText}>←</Text>
+                </TouchableOpacity>
 
             <Text style={styles.title}>Create Non-UCI Account</Text>
             
@@ -88,13 +87,7 @@ const SignupNonUCI = ({ navigation }) => {
                 autoCapitalize="none"
             />
 
-            <TextInput
-                style={styles.input}
-                placeholder="Phone Number"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-            />
+
 
             <TextInput
                 style={styles.input}
@@ -107,14 +100,14 @@ const SignupNonUCI = ({ navigation }) => {
             <TermsAcceptance 
                 isAccepted={termsAccepted}
                 onToggle={() => setTermsAccepted(!termsAccepted)}
-                theme={theme}
+                theme={{ colors }}
             />
 
             <TouchableOpacity
                 style={[
                     styles.button,
-                    { backgroundColor: theme.colors.primary },
-                    !termsAccepted && { backgroundColor: theme.colors.border, opacity: 0.5 }
+                    { backgroundColor: colors.primary },
+                    !termsAccepted && { backgroundColor: colors.border, opacity: 0.5 }
                 ]} 
                 onPress={handleSignup}
                 disabled={!termsAccepted}
@@ -124,6 +117,7 @@ const SignupNonUCI = ({ navigation }) => {
                 </Text>
             </TouchableOpacity>
         </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
@@ -131,9 +125,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
     },
     backButton: {
+        paddingTop: 0,
         marginBottom: 20,
     },
     backButtonText: {

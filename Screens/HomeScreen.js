@@ -194,8 +194,11 @@ const HomeScreen = ({ navigation, route }) => {
                                         }
                                     ]
                                 );
-                            } else {
+                            } else if (userProfile) {
                                 navigation.navigate('Profile');
+                            } else {
+                                // User is not authenticated, redirect to Auth
+                                navigation.navigate('Auth');
                             }
                         }}
                     >
