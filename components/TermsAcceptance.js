@@ -12,12 +12,24 @@ const TermsAcceptance = ({ isAccepted, onToggle, theme }) => {
     Linking.openURL('https://www.privacypolicies.com/live/af7501de-9bac-4b49-ba28-888b36ffc9e7');
   };
 
-  // Safely access colors with fallback
+  // Safely access colors with fallback - more defensive approach
   const colors = theme?.colors || {
-    border: '#ccc',
-    primary: '#0064a4',
-    text: '#000'
+    border: '#dee2e6',
+    primary: '#0C2340',
+    text: '#495057'
   };
+
+  // Debug logging to help identify the issue
+  console.log('TermsAcceptance: received theme prop:', theme);
+  console.log('TermsAcceptance: theme?.colors:', theme?.colors);
+  console.log('TermsAcceptance: final colors object:', colors);
+  
+  if (!theme) {
+    console.warn('TermsAcceptance: theme prop is undefined');
+  }
+  if (!theme?.colors) {
+    console.warn('TermsAcceptance: theme.colors is undefined, using fallback colors');
+  }
 
   return (
     <View style={styles.container}>

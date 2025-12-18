@@ -11,7 +11,7 @@ export default function Signup({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const { theme } = useTheme();
+  const { colors } = useTheme();
 
   const validateUCIEmail = (email) => {
     const uciEmailRegex = /^[a-zA-Z0-9._%+-]+@uci\.edu$/;
@@ -150,14 +150,14 @@ export default function Signup({ navigation }) {
       <TermsAcceptance 
         isAccepted={termsAccepted}
         onToggle={() => setTermsAccepted(!termsAccepted)}
-        theme={theme}
+        theme={{ colors }}
       />
 
       <TouchableOpacity 
         style={[
           styles.signupButton, 
           loading && styles.signupButtonDisabled,
-          { backgroundColor: termsAccepted ? theme.colors.primary : theme.colors.border, opacity: termsAccepted ? 1 : 0.5 }
+          { backgroundColor: termsAccepted ? colors.primary : colors.border, opacity: termsAccepted ? 1 : 0.5 }
         ]} 
         onPress={handleSignup}
         disabled={loading || !termsAccepted}

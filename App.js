@@ -38,14 +38,24 @@ function Navigation() {
   const navigationRef = React.useRef();
 
   useEffect(() => {
-    // Navigate to Home when guest mode is activated or user logs in
-    if (((user && userProfile) || isGuest) && navigationRef.current) {
-      navigationRef.current.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        })
-      );
+    if (navigationRef.current) {
+      if ((user && userProfile) || isGuest) {
+        // Navigate to Home when guest mode is activated or user logs in
+        navigationRef.current.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          })
+        );
+      } else if (!user && !userProfile && !isGuest) {
+        // Navigate to Auth when user logs out
+        navigationRef.current.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          })
+        );
+      }
     }
   }, [user, userProfile, isGuest]);
 
