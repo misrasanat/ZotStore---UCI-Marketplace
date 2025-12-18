@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { auth  } from './firebase';
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from './AuthContext';
 import DropDownPicker from 'react-native-dropdown-picker';
+import TermsAcceptance from './components/TermsAcceptance';
+import { useTheme } from './ThemeContext';
 
 export default function Signup2({ navigation, route }) {
   const { refreshAuthState } = useAuth();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [major, setMajor] = useState('');
   const [studentType, setStudentType] = useState('Undergraduate'); // 'Undergraduate' or 'Graduate'
   const [year, setYear] = useState('');
@@ -17,6 +18,7 @@ export default function Signup2({ navigation, route }) {
   const [campusArea, setCampusArea] = useState(''); // 'middle-earth' or 'mesa-court'
   const [buildingName, setBuildingName] = useState('');
   const [apartmentName, setApartmentName] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   
   const db = getFirestore();
   const user = auth.currentUser;
@@ -57,48 +59,36 @@ export default function Signup2({ navigation, route }) {
     if (except !== 'campusArea') setCampusAreaOpen(false);
   };
 
-  const validatePhone = (phone) => {
-    const phoneRegex = /^\d{10,}$/;
-    return phoneRegex.test(phone.replace(/\D/g, ''));
-  };
+  const handleCompleteSignup = async () => {
+    if (!termsAccepted) {
+      Alert.alert('Terms Required', 'Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
 
-  const handleContinue = async() => {
-    if (!name.trim()) {
-      Alert.alert('Error', 'Please enter your name.');
-      return;
-    }
-    if (!phone.trim()) {
-      Alert.alert('Error', 'Please enter your phone number.');
-      return;
-    }
-    if (!validatePhone(phone)) {
-      Alert.alert('Invalid Phone', 'Please enter a valid phone number (at least 10 digits).');
-      return;
-    }
-    if (!major.trim()) {
-      Alert.alert('Error', 'Please enter your major.');
-      return;
-    }
+    // existing signup completion logic
+    const profileData = {
+      name: name,
+      major: major,
+      studentType: studentType,
+      year: year,
+      bio: bio,
+      locationType: locationType,
+      campusArea: campusArea,
+      buildingName: buildingName,
+      apartmentName: apartmentName,
+      email: user.email,
+      uid: uid,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isVerified: false,
+      isActive: true,
+      termsAccepted: true,
+      termsAcceptedAt: serverTimestamp(),
+      profileCreatedAt: serverTimestamp()
+    };
 
     try {
-      await setDoc(userRef, {
-        name: name,
-        phone: phone,
-        major: major,
-        studentType: studentType,
-        year: year,
-        bio: bio,
-        locationType: locationType,
-        campusArea: campusArea,
-        buildingName: buildingName,
-        apartmentName: apartmentName,
-        email: user.email,
-        uid: uid,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isVerified: false,
-        isActive: true,
-      });
+      await setDoc(userRef, profileData);
       Alert.alert('Success', 'Profile created successfully', [
         {
           text: 'OK',
@@ -117,170 +107,179 @@ export default function Signup2({ navigation, route }) {
     }
   };
 
+  const { theme } = useTheme();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Complete Profile</Text>
-      <Text style={styles.subtitle}>Tell us about yourself</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name *"
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number *"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Major *"
-        value={major}
-        onChangeText={setMajor}
-        autoCapitalize="words"
-      />
-
-            {/* Student Type Selection */}
-      <View style={[styles.pickerContainer, { zIndex: 4000 }]}>
-        <Text style={styles.pickerLabel}>Student Type *</Text>
-        <DropDownPicker
-          open={studentTypeOpen}
-          value={studentType}
-          items={studentTypeItems}
-          setOpen={(open) => {
-            if (open) closeAllDropdowns('studentType');
-            setStudentTypeOpen(open);
-          }}
-          setValue={setStudentType}
-          placeholder="Select Student Type"
-          style={styles.dropdown}
-          dropDownContainerStyle={styles.dropdownContainer}
-          textStyle={styles.dropdownText}
-          zIndex={4000}
-          zIndexInverse={1000}
-          listMode="SCROLLVIEW"
-          scrollViewProps={{
-            nestedScrollEnabled: true,
-          }}
-        />
-      </View>
-
-      {/* Year Selection */}
-      <View style={[styles.pickerContainer, { zIndex: 3000 }]}>
-        <Text style={styles.pickerLabel}>Year</Text>
-        <DropDownPicker
-          open={yearOpen}
-          value={year}
-          items={yearItems}
-          setOpen={(open) => {
-            if (open) closeAllDropdowns('year');
-            setYearOpen(open);
-          }}
-          setValue={setYear}
-          placeholder="Select Year"
-          style={styles.dropdown}
-          dropDownContainerStyle={styles.dropdownContainer}
-          textStyle={styles.dropdownText}
-          zIndex={3000}
-          zIndexInverse={2000}
-          listMode="SCROLLVIEW"
-          scrollViewProps={{
-            nestedScrollEnabled: true,
-          }}
-        />
-      </View>
-
-      {/* Location Type Selection */}
-      <View style={[styles.pickerContainer, { zIndex: 2000 }]}>
-        <Text style={styles.pickerLabel}>Location Type</Text>
-        <DropDownPicker
-          open={locationTypeOpen}
-          value={locationType}
-          items={locationTypeItems}
-          setOpen={(open) => {
-            if (open) closeAllDropdowns('locationType');
-            setLocationTypeOpen(open);
-          }}
-          setValue={setLocationType}
-          placeholder="Select Location Type"
-          style={styles.dropdown}
-          dropDownContainerStyle={styles.dropdownContainer}
-          textStyle={styles.dropdownText}
-          listMode="SCROLLVIEW"
-          scrollViewProps={{
-            nestedScrollEnabled: true,
-          }}
-        />
-      </View>
-
-      {/* On Campus Options */}
-      {locationType === 'on-campus' && (
-        <>
-          <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
-            <Text style={styles.pickerLabel}>Campus Area</Text>
-            <DropDownPicker
-              open={campusAreaOpen}
-              value={campusArea}
-              items={campusAreaItems}
-              setOpen={(open) => {
-                if (open) closeAllDropdowns('campusArea');
-                setCampusAreaOpen(open);
-              }}
-              setValue={setCampusArea}
-              placeholder="Select Campus Area"
-              style={styles.dropdown}
-              dropDownContainerStyle={styles.dropdownContainer}
-              textStyle={styles.dropdownText}
-              listMode="SCROLLVIEW"
-              scrollViewProps={{
-                nestedScrollEnabled: true,
-              }}
-            />
-          </View>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Building Name"
-            value={buildingName}
-            onChangeText={setBuildingName}
-            autoCapitalize="words"
-          />
-        </>
-      )}
-
-      {/* Off Campus Options */}
-      {locationType === 'off-campus' && (
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={styles.title}>Complete Profile</Text>
+        <Text style={styles.subtitle}>Tell us about yourself</Text>
+        
         <TextInput
           style={styles.input}
-          placeholder="Apartment Name"
-          value={apartmentName}
-          onChangeText={setApartmentName}
+          placeholder="Full Name *"
+          value={name}
+          onChangeText={setName}
           autoCapitalize="words"
         />
-      )}
-      
-      <TextInput
-        style={[styles.input, styles.bioInput]}
-        placeholder="Bio"
-        value={bio}
-        onChangeText={setBio}
-        multiline
-        numberOfLines={3}
-        textAlignVertical="top"
-      />
-      
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueButtonText}>Continue</Text>
-      </TouchableOpacity>
-      
-    </ScrollView>
+        
+        <TextInput
+          style={styles.input}
+          placeholder="Major *"
+          value={major}
+          onChangeText={setMajor}
+          autoCapitalize="words"
+        />
+
+              {/* Student Type Selection */}
+        <View style={[styles.pickerContainer, { zIndex: 4000 }]}>
+          <Text style={styles.pickerLabel}>Student Type *</Text>
+          <DropDownPicker
+            open={studentTypeOpen}
+            value={studentType}
+            items={studentTypeItems}
+            setOpen={(open) => {
+              if (open) closeAllDropdowns('studentType');
+              setStudentTypeOpen(open);
+            }}
+            setValue={setStudentType}
+            placeholder="Select Student Type"
+            style={styles.dropdown}
+            dropDownContainerStyle={styles.dropdownContainer}
+            textStyle={styles.dropdownText}
+            zIndex={4000}
+            zIndexInverse={1000}
+            listMode="SCROLLVIEW"
+            scrollViewProps={{
+              nestedScrollEnabled: true,
+            }}
+          />
+        </View>
+
+        {/* Year Selection */}
+        <View style={[styles.pickerContainer, { zIndex: 3000 }]}>
+          <Text style={styles.pickerLabel}>Year</Text>
+          <DropDownPicker
+            open={yearOpen}
+            value={year}
+            items={yearItems}
+            setOpen={(open) => {
+              if (open) closeAllDropdowns('year');
+              setYearOpen(open);
+            }}
+            setValue={setYear}
+            placeholder="Select Year"
+            style={styles.dropdown}
+            dropDownContainerStyle={styles.dropdownContainer}
+            textStyle={styles.dropdownText}
+            zIndex={3000}
+            zIndexInverse={2000}
+            listMode="SCROLLVIEW"
+            scrollViewProps={{
+              nestedScrollEnabled: true,
+            }}
+          />
+        </View>
+
+        {/* Location Type Selection */}
+        <View style={[styles.pickerContainer, { zIndex: 2000 }]}>
+          <Text style={styles.pickerLabel}>Location Type</Text>
+          <DropDownPicker
+            open={locationTypeOpen}
+            value={locationType}
+            items={locationTypeItems}
+            setOpen={(open) => {
+              if (open) closeAllDropdowns('locationType');
+              setLocationTypeOpen(open);
+            }}
+            setValue={setLocationType}
+            placeholder="Select Location Type"
+            style={styles.dropdown}
+            dropDownContainerStyle={styles.dropdownContainer}
+            textStyle={styles.dropdownText}
+            listMode="SCROLLVIEW"
+            scrollViewProps={{
+              nestedScrollEnabled: true,
+            }}
+          />
+        </View>
+
+        {/* On Campus Options */}
+        {locationType === 'on-campus' && (
+          <>
+            <View style={[styles.pickerContainer, { zIndex: 1000 }]}>
+              <Text style={styles.pickerLabel}>Campus Area</Text>
+              <DropDownPicker
+                open={campusAreaOpen}
+                value={campusArea}
+                items={campusAreaItems}
+                setOpen={(open) => {
+                  if (open) closeAllDropdowns('campusArea');
+                  setCampusAreaOpen(open);
+                }}
+                setValue={setCampusArea}
+                placeholder="Select Campus Area"
+                style={styles.dropdown}
+                dropDownContainerStyle={styles.dropdownContainer}
+                textStyle={styles.dropdownText}
+                listMode="SCROLLVIEW"
+                scrollViewProps={{
+                  nestedScrollEnabled: true,
+                }}
+              />
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Building Name"
+              value={buildingName}
+              onChangeText={setBuildingName}
+              autoCapitalize="words"
+            />
+          </>
+        )}
+
+        {/* Off Campus Options */}
+        {locationType === 'off-campus' && (
+          <TextInput
+            style={styles.input}
+            placeholder="Apartment Name"
+            value={apartmentName}
+            onChangeText={setApartmentName}
+            autoCapitalize="words"
+          />
+        )}
+        
+        <TextInput
+          style={[styles.input, styles.bioInput]}
+          placeholder="Bio"
+          value={bio}
+          onChangeText={setBio}
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+        />
+        
+        <TermsAcceptance 
+          isAccepted={termsAccepted}
+          onToggle={() => setTermsAccepted(!termsAccepted)}
+          theme={theme}
+        />
+
+        <TouchableOpacity 
+          style={[
+            styles.button,
+            { backgroundColor: theme.colors.primary },
+            !termsAccepted && { backgroundColor: theme.colors.border, opacity: 0.5 }
+          ]} 
+          onPress={handleCompleteSignup}
+          disabled={!termsAccepted}
+        >
+          <Text style={styles.buttonText}>Complete Signup</Text>
+        </TouchableOpacity>
+        
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -343,16 +342,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#495057',
   },
-  continueButton: {
+  button: {
     width: '100%',
-    backgroundColor: '#2c5aa0',
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
   },
-  continueButtonText: {
+  buttonText: {
     color: '#ffffff',
     fontSize: 19,
     fontWeight: 'bold',

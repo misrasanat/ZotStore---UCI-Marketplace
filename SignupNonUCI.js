@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { auth, createUserWithEmailAndPassword } from './firebase';
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import TermsAcceptance from './components/TermsAcceptance';
+import { useTheme } from './ThemeContext';
 
 const SignupNonUCI = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -10,10 +12,17 @@ const SignupNonUCI = ({ navigation }) => {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const { theme } = useTheme();
 
     const handleSignup = async () => {
         if (!name || !email || !password || !phone) {
             Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+
+        if (!termsAccepted) {
+            Alert.alert('Terms Required', 'Please accept the Terms of Service and Privacy Policy to continue.');
             return;
         }
 
@@ -23,14 +32,17 @@ const SignupNonUCI = ({ navigation }) => {
             const user = userCredential.user;
             
             const db = getFirestore();
-            await setDoc(doc(db, 'users', user.uid), {
+            const userData = {
                 name,
                 email,
                 phone,
                 isUCIStudent: false,
                 canSell: false,
-                createdAt: new Date(),
-            });
+                termsAccepted: true,
+                termsAcceptedAt: serverTimestamp(),
+                createdAt: serverTimestamp(),
+            };
+            await setDoc(doc(db, 'users', user.uid), userData);
 
             Alert.alert('Success', 'Account created successfully!');
             navigation.navigate('Auth');
@@ -42,7 +54,7 @@ const SignupNonUCI = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <TouchableOpacity 
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
@@ -92,16 +104,26 @@ const SignupNonUCI = ({ navigation }) => {
                 secureTextEntry
             />
 
+            <TermsAcceptance 
+                isAccepted={termsAccepted}
+                onToggle={() => setTermsAccepted(!termsAccepted)}
+                theme={theme}
+            />
+
             <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+                style={[
+                    styles.button,
+                    { backgroundColor: theme.colors.primary },
+                    !termsAccepted && { backgroundColor: theme.colors.border, opacity: 0.5 }
+                ]} 
                 onPress={handleSignup}
-                disabled={loading}
+                disabled={!termsAccepted}
             >
                 <Text style={styles.buttonText}>
                     {loading ? 'Creating Account...' : 'Create Account'}
                 </Text>
             </TouchableOpacity>
-        </SafeAreaView>
+        </KeyboardAvoidingView>
     );
 };
 

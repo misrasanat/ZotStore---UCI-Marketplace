@@ -329,17 +329,8 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
         {/* Contact & Location (privacy-aware) */}
         {profileUser && (() => {
           const privacy = profileUser?.settings?.privacy || {};
-          const showPhone = privacy.showPhone === true;
           const hasNewFlag = typeof privacy.showFullLocation === 'boolean';
           const showFullLocation = hasNewFlag ? (privacy.showFullLocation === true) : (privacy.locationDetail === 'precise');
-
-          // Phone
-          const phoneRow = showPhone && profileUser.phone ? (
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.text }]}>Phone</Text>
-              <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{profileUser.phone}</Text>
-            </View>
-          ) : null;
 
           // Location (only when showFullLocation)
           let locationRow = null;
@@ -367,13 +358,12 @@ const OtherUserProfileScreen = ({ navigation, route }) => {
             }
           }
 
-          // Only render the entire section if at least one item is shown
-          if (!phoneRow && !locationRow) return null;
+          // Only render the entire section if location is shown
+          if (!locationRow) return null;
 
           return (
             <View style={[styles.contactBox, { backgroundColor: colors.background }]}>
               <Text style={[styles.sectionHeader, { color: colors.primary }]}>Contact & Location</Text>
-              {phoneRow}
               {locationRow}
             </View>
           );

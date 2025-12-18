@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import { useAuth } from './AuthContext';
+import TermsAcceptance from './components/TermsAcceptance';
+import { useTheme } from './ThemeContext';
 
 export default function Auth({ navigation }) {
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const { setGuestMode } = useAuth();
+  const { colors } = useTheme(); // Fixed: destructure colors directly, not theme
+
   const handleUCISSOLogin = async () => {
     WebBrowser.openBrowserAsync('https://login.uci.edu/ucinetid/webauth');
-    // const redirectUri = AuthSession.makeRedirectUri();
-    // const authUrl = `https://login.uci.edu/ucinetid/webauth?redirect_uri=${encodeURIComponent(redirectUri)}`;
-    // const result = await AuthSession.startAsync({ authUrl });
-    // if (result.type === 'success') {
-    //   navigation.navigate('Home');
-    // }
   };
 
   const handleEmailLogin = () => {
@@ -22,8 +23,13 @@ export default function Auth({ navigation }) {
     navigation.navigate('Signup');
   };
 
+  const handleGuestMode = () => {
+    setGuestMode();
+    // Navigation will happen automatically due to AuthContext state change
+  };
+
   return (
-    <View style={styles.outerContainer}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <View style={styles.headerAccent} />
       <View style={styles.topSection}>
         <Text style={styles.welcome}>Welcome to</Text>
@@ -37,20 +43,65 @@ export default function Auth({ navigation }) {
         {/* <TouchableOpacity style={styles.ssoButton} onPress={handleUCISSOLogin}>
           <Text style={styles.ssoButtonText}>Login with UCI SSO</Text>
         </TouchableOpacity> */}
-        <TouchableOpacity style={styles.emailButton} onPress={handleEmailLogin}>
-          <Text style={styles.emailButtonText}>Login with Email</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.signupButton} onPress={handleEmailSignup}>
-          <Text style={styles.signupButtonText}>Create Account (UCI)</Text>
+        <TouchableOpacity 
+          style={[
+            styles.emailButton,
+            { backgroundColor: colors.primary },
+            !termsAccepted && { backgroundColor: colors.border, opacity: 0.5 }
+          ]}
+          onPress={() => termsAccepted && handleEmailLogin()}
+          disabled={!termsAccepted}
+        >
+          <Text style={[styles.emailButtonText, { color: colors.textLight }]}>
+            Login with Email
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.signupButton, styles.nonUCIButton]} 
-          onPress={() => navigation.navigate('SignupNonUCI')}
+          style={[
+            styles.signupButton,
+            { borderColor: colors.primary },
+            !termsAccepted && { borderColor: colors.border, opacity: 0.5 }
+          ]}
+          onPress={() => termsAccepted && handleEmailSignup()}
+          disabled={!termsAccepted}
         >
-          <Text style={styles.signupButtonText}>Create Account (Non-UCI)</Text>
+          <Text style={[
+            styles.signupButtonText, 
+            { color: colors.primary },
+            !termsAccepted && { color: colors.border }
+          ]}>
+            Create Account (UCI)
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[
+            styles.signupButton, 
+            styles.nonUCIButton,
+            !termsAccepted && { backgroundColor: '#ccc', opacity: 0.5 }
+          ]} 
+          onPress={() => termsAccepted && navigation.navigate('SignupNonUCI')}
+          disabled={!termsAccepted}
+        >
+          <Text style={[
+            styles.signupButtonText,
+            !termsAccepted && { color: '#999' }
+          ]}>
+            Create Account (Non-UCI)
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.guestButton]} 
+          onPress={handleGuestMode}
+        >
+          <Text style={styles.guestButtonText}>Enter as Guest</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.footerAccent} />
+      <TermsAcceptance 
+        isAccepted={termsAccepted}
+        onToggle={() => setTermsAccepted(!termsAccepted)}
+        theme={{ colors }} // Fixed: pass colors as theme.colors structure
+      />
     </View>
   );
 }
@@ -161,8 +212,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#666',
     marginTop: 10,
   },
+  guestButton: {
+    width: '80%',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#6c757d',
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
   signupButtonText: {
     color: '#fff',
+    fontSize: 19,
+    fontWeight: 'bold',
+    letterSpacing: 1.1,
+  },
+  guestButtonText: {
+    color: '#6c757d',
     fontSize: 19,
     fontWeight: 'bold',
     letterSpacing: 1.1,

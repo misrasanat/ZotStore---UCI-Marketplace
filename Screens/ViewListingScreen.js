@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { formatDistanceToNow } from 'date-fns';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -9,12 +9,14 @@ import { getDoc } from 'firebase/firestore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { useTheme } from '../ThemeContext';
+import { useAuth } from '../AuthContext';
 
 const ViewListingScreen = ({ route, navigation }) => {
   const { item } = route.params;
   const [sellerInfo, setSellerInfo] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const { colors } = useTheme();
+  const { isGuest, exitGuestMode } = useAuth();
 
   const updatedTime = item.timestamp?.toDate
     ? formatDistanceToNow(item.timestamp.toDate(), { addSuffix: true })
@@ -204,11 +206,32 @@ const ViewListingScreen = ({ route, navigation }) => {
         <SafeAreaView edges={['bottom']} style={[styles.footer, { backgroundColor: colors.background }]}>
           <TouchableOpacity
             style={[styles.messageButton, { backgroundColor: colors.primary }]}
-            onPress={() => navigation.navigate('Chat Screen', { userId: item.userId })}
+            onPress={() => {
+              if (isGuest) {
+                Alert.alert(
+                  'Guest Mode',
+                  'Please create an account to message sellers.',
+                  [
+                    { text: 'Continue as Guest', style: 'cancel' },
+                    { 
+                      text: 'Create Account', 
+                      onPress: () => {
+                        exitGuestMode();
+                        navigation.navigate('Auth');
+                      }
+                    }
+                  ]
+                );
+              } else {
+                navigation.navigate('Chat Screen', { userId: item.userId });
+              }
+            }}
             activeOpacity={0.7}
           >
             <Icon name="message-square" size={20} color={colors.textLight} style={styles.messageIcon} />
-            <Text style={[styles.messageButtonText, { color: colors.textLight }]}>Message Seller</Text>
+            <Text style={[styles.messageButtonText, { color: colors.textLight }]}>
+              {isGuest ? 'Login to Message' : 'Message Seller'}
+            </Text>
           </TouchableOpacity>
         </SafeAreaView>
       )}

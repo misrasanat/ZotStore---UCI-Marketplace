@@ -14,14 +14,7 @@ export default function SettingsScreen({ navigation }) {
 
   const [loading, setLoading] = useState(true);
 
-  // Notifications
-  const [notifEnabled, setNotifEnabled] = useState(true);
-  const [notifChat, setNotifChat] = useState(true);
-  const [notifListings, setNotifListings] = useState(true);
-  const [notifReviews, setNotifReviews] = useState(true);
-
   // Privacy
-  const [showPhone, setShowPhone] = useState(false);
   const [showFullLocation, setShowFullLocation] = useState(false);
 
   // Security - change password
@@ -36,11 +29,6 @@ export default function SettingsScreen({ navigation }) {
       if (snap.exists()) {
         const data = snap.data();
         const s = data?.settings || {};
-        setNotifEnabled(s?.notifications?.enabled ?? true);
-        setNotifChat(s?.notifications?.chat ?? true);
-        setNotifListings(s?.notifications?.listings ?? true);
-        setNotifReviews(s?.notifications?.reviews ?? true);
-        setShowPhone(s?.privacy?.showPhone ?? false);
         const legacyDetail = s?.privacy?.locationDetail;
         setShowFullLocation(s?.privacy?.showFullLocation ?? (legacyDetail === 'precise'));
       }
@@ -67,30 +55,9 @@ export default function SettingsScreen({ navigation }) {
   }, [uid]);
 
   // Handlers to save immediately on change
-  const onToggleMasterNotif = async (value) => {
-    setNotifEnabled(value);
-    await saveSettings({ notifications: { enabled: value, chat: value && notifChat, listings: value && notifListings, reviews: value && notifReviews } });
-  };
-  const onToggleChat = async (value) => {
-    setNotifChat(value);
-    await saveSettings({ notifications: { enabled: notifEnabled, chat: value, listings: notifListings, reviews: notifReviews } });
-  };
-  const onToggleListings = async (value) => {
-    setNotifListings(value);
-    await saveSettings({ notifications: { enabled: notifEnabled, chat: notifChat, listings: value, reviews: notifReviews } });
-  };
-  const onToggleReviews = async (value) => {
-    setNotifReviews(value);
-    await saveSettings({ notifications: { enabled: notifEnabled, chat: notifChat, listings: notifListings, reviews: value } });
-  };
-
-  const onToggleShowPhone = async (value) => {
-    setShowPhone(value);
-    await saveSettings({ privacy: { showPhone: value, showFullLocation, locationDetail: deleteField() } });
-  };
   const onToggleFullLocation = async (value) => {
     setShowFullLocation(value);
-    await saveSettings({ privacy: { showPhone, showFullLocation: value, locationDetail: deleteField() } });
+    await saveSettings({ privacy: { showFullLocation: value, locationDetail: deleteField() } });
   };
 
   const handleChangePassword = async () => {
@@ -201,15 +168,6 @@ export default function SettingsScreen({ navigation }) {
 
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.primary }]}>Privacy</Text>
-          <View style={styles.rowBetween}>
-            <Text style={[styles.label, { color: colors.text }]}>Show Phone Number</Text>
-            <Switch 
-              value={showPhone} 
-              onValueChange={onToggleShowPhone}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={showPhone ? colors.buttonText : colors.text}
-            />
-          </View>
           <View style={styles.rowBetween}>
             <Text style={[styles.label, { color: colors.text }]}>Show Full Location</Text>
             <Switch 

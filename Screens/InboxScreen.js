@@ -12,6 +12,7 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  Alert
 } from 'react-native';
 import { useUnread } from '../UnreadContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -67,6 +68,18 @@ const InboxScreen = ({ navigation }) => {
   const { user: currentUser } = useAuth();
   const { unreadCount, refreshUnreadStatus } = useUnread();
   const { colors } = useTheme();
+  const { isGuest } = useAuth();
+
+  // Redirect guests immediately
+  React.useEffect(() => {
+    if (isGuest) {
+      Alert.alert(
+        'Guest Mode',
+        'Please create an account to access messages.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    }
+  }, [isGuest]);
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -132,7 +145,7 @@ const InboxScreen = ({ navigation }) => {
 
   useEffect(() => {
     const fetchBlockedUsers = async () => {
-      if (!currentUser?.uid) return;
+      if (!currentUser?.uid || isGuest) return; // Skip for guests
       try {
         const userRef = doc(db, 'users', currentUser.uid);
         const userSnap = await getDoc(userRef);
@@ -140,7 +153,8 @@ const InboxScreen = ({ navigation }) => {
           const userData = userSnap.data();
           const blocked = userData.blockedUsers || [];
           const blockedBy = userData.blockedBy || [];
-          setBlockedUsers([...blocked, ...blockedBy]);
+          // Filter out any undefined/null values
+          setBlockedUsers([...blocked, ...blockedBy].filter(Boolean));
         }
       } catch (error) {
         console.error('Error fetching blocked users:', error);
@@ -148,10 +162,13 @@ const InboxScreen = ({ navigation }) => {
     };
 
     fetchBlockedUsers();
-  }, [currentUser?.uid]);
+  }, [currentUser?.uid, isGuest]);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || isGuest) {
+      setLoading(false);
+      return;
+    }
 
     const q = query(collection(db, 'chats'), orderBy('lastMessage.timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -165,7 +182,7 @@ const InboxScreen = ({ navigation }) => {
         const otherUserId = chatData.participants.find(id => id !== currentUser.uid);
         
         // Skip if user is blocked - add null check
-        if (blockedUsers && blockedUsers.length > 0 && blockedUsers.includes(otherUserId)) continue;
+        if (!otherUserId || blockedUsers.includes(otherUserId)) continue;
         
         try {
           const otherUserRef = doc(db, 'users', otherUserId);
@@ -198,7 +215,25 @@ const InboxScreen = ({ navigation }) => {
     });
 
     return () => unsubscribe();
-  }, [currentUser, blockedUsers]);
+  }, [currentUser, blockedUsers, isGuest]);
+
+  // Show empty state for guests
+  if (isGuest) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <SafeAreaView edges={['top']} style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Messages</Text>
+        </SafeAreaView>
+        <View style={styles.emptyContainer}>
+          <Feather name="message-circle" size={50} color={colors.textSecondary} />
+          <Text style={[styles.emptyText, { color: colors.text }]}>Guest Mode</Text>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+            Create an account to access messages
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

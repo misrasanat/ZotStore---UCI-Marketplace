@@ -28,11 +28,12 @@ const BlockedUsersScreen = ({ navigation }) => {
       
       if (currentUserSnap.exists()) {
         const userData = currentUserSnap.data();
-        const blockedUserIds = userData.blockedUsers || [];
+        const blockedUserIds = (userData.blockedUsers || []).filter(Boolean); // Filter out undefined/null
         
         // Fetch details for each blocked user
         const blockedUsersData = await Promise.all(
           blockedUserIds.map(async (userId) => {
+            if (!userId) return null; // Skip if userId is undefined/null
             try {
               const userRef = doc(db, 'users', userId);
               const userSnap = await getDoc(userRef);
@@ -47,7 +48,8 @@ const BlockedUsersScreen = ({ navigation }) => {
           })
         );
         
-        setBlockedUsers(blockedUsersData);
+        // Filter out any null results
+        setBlockedUsers(blockedUsersData.filter(Boolean));
       }
     } catch (error) {
       console.error('Error fetching blocked users:', error);
