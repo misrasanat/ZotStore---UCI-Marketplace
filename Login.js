@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { auth, signInWithEmailAndPassword, sendEmailVerification } from './firebase';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
 const Login = ({ navigation }) => {
@@ -54,6 +54,16 @@ const Login = ({ navigation }) => {
         );
         setLoading(false);
         return;
+      }
+
+      // After successful login, update user document with terms acceptance
+      if (userCredential?.user) {
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        await updateDoc(userRef, {
+          termsAccepted: true,
+          termsAcceptedAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp()
+        });
       }
 
       const userRef = doc(db, 'users', user.uid);

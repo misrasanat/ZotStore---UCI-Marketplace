@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import { Alert } from 'react-native';
 import styles from './HomeScreen.styles';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, FlatList} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,10 +16,35 @@ const HomeScreen = ({ navigation, route }) => {
     const [searchQuery, setSearchQuery] = React.useState('');
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [filterVisible, setFilterVisible] = useState(false);
-    const [blockedUsers, setBlockedUsers] = React.useState([]);
-    const { userProfile } = useAuth();
+    const [guestAlertShown, setGuestAlertShown] = useState(false);
+    const [blockedUsers, setBlockedUsers] = useState([]);
+    
+    const { userProfile, isGuest, exitGuestMode } = useAuth();
     const { colors } = useTheme();
     const isUCIVerified = userProfile?.email?.toLowerCase().endsWith('@uci.edu') && userProfile?.isVerified;
+
+    // Show guest limitations alert
+    React.useEffect(() => {
+        if (isGuest && !guestAlertShown) {
+            setTimeout(() => {
+                Alert.alert(
+                    'Guest Mode',
+                    'You are browsing as a guest. You cannot:\n• Create or edit profile\n• Sell items\n• Message other users\n• Leave reviews\n\nCreate an account to access all features.',
+                    [
+                        { text: 'Continue as Guest', style: 'cancel' },
+                        { 
+                            text: 'Create Account', 
+                            onPress: () => {
+                                exitGuestMode();
+                                navigation.navigate('Auth');
+                            }
+                        }
+                    ]
+                );
+                setGuestAlertShown(true);
+            }, 500);
+        }
+    }, [isGuest, guestAlertShown]);
 
     const categories = [
         { label: 'All Categories', value: null },
@@ -38,7 +64,7 @@ const HomeScreen = ({ navigation, route }) => {
     // Fetch blocked users list
     React.useEffect(() => {
         const fetchBlockedUsers = async () => {
-            if (!userProfile?.uid) return;
+            if (!userProfile?.uid || isGuest) return; // Skip for guests
             try {
                 const userRef = doc(db, 'users', userProfile.uid);
                 const userSnap = await getDoc(userRef);
@@ -46,21 +72,22 @@ const HomeScreen = ({ navigation, route }) => {
                     const userData = userSnap.data();
                     const blocked = userData.blockedUsers || [];
                     const blockedBy = userData.blockedBy || [];
-                    // Combine both arrays to filter out all blocked interactions
-                    setBlockedUsers([...blocked, ...blockedBy]);
+                    // Combine both arrays and filter out any undefined/null values
+                    setBlockedUsers([...blocked, ...blockedBy].filter(Boolean));
                 }
             } catch (error) {
                 console.error('Error fetching blocked users:', error);
             }
         };
         fetchBlockedUsers();
-    }, [userProfile?.uid]);
+    }, [userProfile?.uid, isGuest]);
     
     // Filter items based on search query, selected categories, and blocked users
     const filteredItems = items.filter((item) => {
         const matchesSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(item.category);
-        const notBlocked = !blockedUsers.includes(item.userId);
+        // Skip blocking check for guests since they don't have blocked users
+        const notBlocked = isGuest || !item.userId || !Array.isArray(blockedUsers) || !blockedUsers.includes(item.userId);
         return matchesSearch && matchesCategory && notBlocked;
     });
 
@@ -97,6 +124,38 @@ const HomeScreen = ({ navigation, route }) => {
         setSelectedCategories([]);
     };
 
+    // Check terms acceptance for authenticated users
+    React.useEffect(() => {
+        const checkTermsAcceptance = async () => {
+            if (!isGuest && userProfile?.uid) {
+                try {
+                    const userRef = doc(db, 'users', userProfile.uid);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        if (!userData.termsAccepted) {
+                            Alert.alert(
+                                'Terms Required',
+                                'You must accept our Terms of Service and Privacy Policy to continue using ZotStore.',
+                                [
+                                    {
+                                        text: 'Accept Terms',
+                                        onPress: () => navigation.navigate('Auth')
+                                    }
+                                ],
+                                { cancelable: false }
+                            );
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking terms acceptance:', error);
+                }
+            }
+        };
+        
+        checkTermsAcceptance();
+    }, [userProfile?.uid, isGuest]);
+
     return (
         <>
             <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -119,9 +178,28 @@ const HomeScreen = ({ navigation, route }) => {
                     </View>
                     <TouchableOpacity 
                         style={[styles.profileButton, { backgroundColor: colors.primary }]}
-                        onPress={() => navigation.navigate('Profile')}
+                        onPress={() => {
+                            if (isGuest) {
+                                Alert.alert(
+                                    'Guest Mode',
+                                    'Please create an account to access profile features.',
+                                    [
+                                        { text: 'Continue as Guest', style: 'cancel' },
+                                        { 
+                                            text: 'Create Account', 
+                                            onPress: () => {
+                                                exitGuestMode();
+                                                navigation.navigate('Auth');
+                                            }
+                                        }
+                                    ]
+                                );
+                            } else {
+                                navigation.navigate('Profile');
+                            }
+                        }}
                     >
-                        {userProfile?.profilePic ? (
+                        {!isGuest && userProfile?.profilePic ? (
                         <Image 
                             source={{ uri: userProfile.profilePic }} 
                             style={{ width: '100%', height: '100%', borderRadius: 22 }}
@@ -226,8 +304,8 @@ const HomeScreen = ({ navigation, route }) => {
                         />
                         )}
                     </View>
-{/* Only show sell button for UCI students */}
-                    {isUCIVerified && (
+{/* Only show sell button for UCI students and non-guests */}
+                    {isUCIVerified && !isGuest && (
                         <View style={styles.floatingActionRow}>
                             <TouchableOpacity
                                 style={[styles.messageButton, { backgroundColor: colors.primary }]}
@@ -241,17 +319,25 @@ const HomeScreen = ({ navigation, route }) => {
                         </View>
                     )}
 
-                    <View style={styles.floatingActionRow}>
-                        <TouchableOpacity
-                        style={[styles.messageButton, { backgroundColor: colors.primary }]}
-                        onPress={() => navigation.navigate('AddProduct')}
+                    {!isGuest && (
+                        <View style={styles.floatingActionRow}>
+                            <TouchableOpacity
+                                style={[styles.messageButton, { backgroundColor: colors.primary }]}
+                                onPress={() => {
+                                    if (isGuest) {
+                                        Alert.alert('Guest Mode', 'Please create an account to sell items.');
+                                    } else {
+                                        navigation.navigate('AddProduct');
+                                    }
+                            }}
                         >
-                        <View style={styles.sellButtonContainer}>
-                            <Feather name="plus" size={20} color="#fff" />
-                            <Text style={styles.sellButtonText}>Sell Item</Text>
-                        </View>
+                            <View style={styles.sellButtonContainer}>
+                                <Feather name="plus" size={20} color="#fff" />
+                                <Text style={styles.sellButtonText}>Sell Item</Text>
+                            </View>
                         </TouchableOpacity>
                     </View>
+                )}
                     <SafeAreaView  edges={['bottom']} style={[styles.safeContainer2, { backgroundColor: colors.primary2}]}>
                         <CustomNavBar />
                     </SafeAreaView>

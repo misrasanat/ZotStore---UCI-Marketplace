@@ -16,7 +16,6 @@ import Feather from 'react-native-vector-icons/Feather';
 export default function Profile({ navigation }) {
   const [profilePic, setProfilePic] = useState(null);
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
   const [major, setMajor] = useState('');
   const [studentType, setStudentType] = useState('');
@@ -86,7 +85,6 @@ export default function Profile({ navigation }) {
           const userData = userDoc.data();
           setUserData(userData);
           setName(userData.name || '');
-          setPhone(userData.phone || '');
           setBio(userData.bio || '');
           setMajor(userData.major || '');
           setStudentType(userData.studentType || '');
@@ -173,7 +171,6 @@ export default function Profile({ navigation }) {
       // Update Firestore with user data and profile picture URL
       await setDoc(userRef, {
         name: name,
-        phone: phone,
         bio: bio,
         major: major,
         studentType: studentType,
@@ -289,21 +286,6 @@ export default function Profile({ navigation }) {
               {/* Account Info */}
               <TouchableOpacity activeOpacity={1} style={[styles.section, { backgroundColor: colors.card }]}>
                 <Text style={[styles.sectionTitle, { color: colors.primary }]}>Account Info</Text>
-                <View style={styles.infoRow}>
-                  <Text style={[styles.infoLabel, { color: colors.text }]}>Phone:</Text>
-                  {isEditing ? (
-                    <TextInput
-                      style={[styles.infoInput, { backgroundColor: colors.input, borderColor: colors.inputBorder, color: colors.text }]}
-                      value={phone}
-                      onChangeText={setPhone}
-                      placeholder="Phone Number"
-                      placeholderTextColor={colors.placeholder}
-                      keyboardType="phone-pad"
-                    />
-                  ) : (
-                    <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{loading ? 'Loading...' : (phone || 'Not set')}</Text>
-                  )}
-                </View>
                 <View style={styles.infoRow}>
                   <Text style={[styles.infoLabel, { color: colors.text }]}>Bio:</Text>
                   {isEditing ? (

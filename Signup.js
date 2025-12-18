@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { auth, createUserWithEmailAndPassword, sendEmailVerification } from './firebase';
+import TermsAcceptance from './components/TermsAcceptance';
+import { useTheme } from './ThemeContext';
+import { serverTimestamp } from 'firebase/firestore';
 
 export default function Signup({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const { theme } = useTheme();
 
   const validateUCIEmail = (email) => {
     const uciEmailRegex = /^[a-zA-Z0-9._%+-]+@uci\.edu$/;
@@ -42,6 +47,11 @@ export default function Signup({ navigation }) {
       Alert.alert('Error', 'Passwords do not match.');
       return;
     }
+
+    if (!termsAccepted) {
+      Alert.alert('Terms Required', 'Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
     
     setLoading(true);
     
@@ -53,6 +63,15 @@ export default function Signup({ navigation }) {
       await sendEmailVerification(user);
       
       console.log('User created:', user.uid);
+      
+      // When creating user document, include terms acceptance
+      const userData = {
+        email: user.email,
+        uid: user.uid,
+        termsAccepted: true,
+        termsAcceptedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      };
       
       Alert.alert(
         'Account Created Successfully!', 
@@ -87,7 +106,7 @@ export default function Signup({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <TouchableOpacity 
         onPress={() => navigation.goBack()}
         style={styles.backButton}
@@ -128,10 +147,20 @@ export default function Signup({ navigation }) {
         editable={!loading}
       />
       
+      <TermsAcceptance 
+        isAccepted={termsAccepted}
+        onToggle={() => setTermsAccepted(!termsAccepted)}
+        theme={theme}
+      />
+
       <TouchableOpacity 
-        style={[styles.signupButton, loading && styles.signupButtonDisabled]} 
+        style={[
+          styles.signupButton, 
+          loading && styles.signupButtonDisabled,
+          { backgroundColor: termsAccepted ? theme.colors.primary : theme.colors.border, opacity: termsAccepted ? 1 : 0.5 }
+        ]} 
         onPress={handleSignup}
-        disabled={loading}
+        disabled={loading || !termsAccepted}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
@@ -147,7 +176,7 @@ export default function Signup({ navigation }) {
         </TouchableOpacity>
       </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -200,7 +229,6 @@ const styles = StyleSheet.create({
   },
   signupButton: {
     width: '100%',
-    backgroundColor: '#0064a4',
     paddingVertical: 16,
     borderRadius: 10,
     alignItems: 'center',

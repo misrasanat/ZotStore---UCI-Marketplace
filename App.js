@@ -29,43 +29,58 @@ import { UnreadProvider } from './UnreadContext';
 import { ThemeProvider } from './ThemeContext';
 import { useState, useEffect } from 'react';
 import { loadFonts } from './fontLoader';
+import { CommonActions } from '@react-navigation/native';
+
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, isGuest } = useAuth();
+  const navigationRef = React.useRef();
+
+  useEffect(() => {
+    // Navigate to Home when guest mode is activated or user logs in
+    if (((user && userProfile) || isGuest) && navigationRef.current) {
+      navigationRef.current.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        })
+      );
+    }
+  }, [user, userProfile, isGuest]);
 
   return (
     <SafeAreaProvider>
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator 
-        initialRouteName={user && userProfile ? "Home" : "Auth"} 
+        initialRouteName={(user && userProfile) || isGuest ? "Home" : "Auth"} 
         screenOptions={{ headerShown: false }}
       >
-        {user && userProfile ? (          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
+        {/* Always available screens */}
+        <Stack.Screen name="Auth" component={Auth} />
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Signup" component={Signup} />
+        <Stack.Screen name="SignupProfile" component={Signup2} />
+        <Stack.Screen name="OTPVerification" component={OTPVerification} />
+        <Stack.Screen name="SignupNonUCI" component={SignupNonUCI} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Other User" component={OtherUserProfileScreen} options={{headerShown: false}} />
+        <Stack.Screen name="All Reviews" component={AllReviewsScreen} options={{headerShown: false}} />
+        <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
+
+        {/* Authenticated user only screens */}
+        {(user && userProfile) && !isGuest && (
+          <>
             <Stack.Screen name="Profile" component={Profile} />
             <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="View Listing" component={ViewListingScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: false }} />
             <Stack.Screen name="My Listings" component={MyListingsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Inbox Screen" component={InboxScreen} options={{headerShown: false}} />
             <Stack.Screen name="Chat Screen" component={ChatScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Other User" component={OtherUserProfileScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: false, title: 'Leave a Review'}} />
-            <Stack.Screen name="All Reviews" component={AllReviewsScreen} options={{headerShown: false}} />
-            <Stack.Screen name="Other User Listings" component={OtherUserListingsScreen} options={{headerShown: false}} />
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Blocked Users" component={BlockedUsersScreen} options={{ headerShown: false }} />
-          </>
-          ) : (
-          // Authentication and incomplete profile screens
-          <>
-            <Stack.Screen name="Auth" component={Auth} />
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Signup" component={Signup} />
-            <Stack.Screen name="SignupProfile" component={Signup2} />
-            <Stack.Screen name="OTPVerification" component={OTPVerification} />
-            <Stack.Screen name="SignupNonUCI" component={SignupNonUCI} />
+            <Stack.Screen name="Edit Listing" component={EditListingScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Leave Review" component={LeaveReviewScreen} options={{headerShown: false, title: 'Leave a Review'}} />
           </>
         )}
       </Stack.Navigator>
