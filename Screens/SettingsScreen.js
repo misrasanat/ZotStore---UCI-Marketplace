@@ -2,8 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFirestore, doc, getDoc, setDoc, deleteField } from 'firebase/firestore';
-import { auth } from '../firebase';
+import { auth, signOut } from '../firebase';
 import { useTheme } from '../ThemeContext';
+import { deleteUserAccount, showDeleteAccountConfirmation, showReauthenticationModal, reauthenticateUser } from '../utils/accountDeletion';
 
 export default function SettingsScreen({ navigation }) {
   const db = getFirestore();
@@ -13,6 +14,7 @@ export default function SettingsScreen({ navigation }) {
   const { isDarkMode, toggleTheme, colors } = useTheme();
 
   const [loading, setLoading] = useState(true);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Privacy
   const [showFullLocation, setShowFullLocation] = useState(false);
@@ -87,6 +89,81 @@ export default function SettingsScreen({ navigation }) {
     } catch (e) {
       console.error('Failed to change password', e);
       Alert.alert('Error', e?.message || 'Failed to change password.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const confirmed = await showDeleteAccountConfirmation(async () => {
+        try {
+          if (!uid || !user?.email) {
+            Alert.alert('Error', 'User information not available.');
+            return;
+          }
+
+          // Attempt to delete the account
+          await deleteUserAccount(uid);
+          
+          // Sign out and navigate to Auth screen
+          await signOut(auth);
+          Alert.alert(
+            'Account Deleted', 
+            'Your account has been permanently deleted.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // The AuthContext will handle navigation automatically after signOut
+                }
+              }
+            ]
+          );
+          
+        } catch (error) {
+          console.error('Delete account error:', error);
+          
+          if (error.message === 'REQUIRES_REAUTHENTICATION') {
+            // Handle reauthentication requirement
+            try {
+              const password = await showReauthenticationModal(user.email);
+              await reauthenticateUser(user.email, password);
+              
+              // Retry deletion after reauthentication
+              await deleteUserAccount(uid);
+              await signOut(auth);
+              
+              Alert.alert(
+                'Account Deleted', 
+                'Your account has been permanently deleted.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // The AuthContext will handle navigation automatically after signOut
+                    }
+                  }
+                ]
+              );
+              
+            } catch (reauthError) {
+              console.error('Reauthentication failed:', reauthError);
+              Alert.alert(
+                'Delete Failed', 
+                'Failed to verify your identity. Please try logging out and back in, then try deleting your account again.'
+              );
+            }
+          } else {
+            Alert.alert(
+              'Delete Failed', 
+              'An error occurred while deleting your account. Please try again or contact support.'
+            );
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('Error in handleDeleteAccount:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     }
   };
 
@@ -177,6 +254,22 @@ export default function SettingsScreen({ navigation }) {
               thumbColor={showFullLocation ? colors.buttonText : colors.text}
             />
           </View>
+        </View>
+
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>Account</Text>
+          <TouchableOpacity 
+            style={[styles.deleteAccountButton, { backgroundColor: colors.error }]}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.deleteAccountText, { color: colors.textLight }]}>
+              Delete Account
+            </Text>
+          </TouchableOpacity>
+          <Text style={[styles.deleteAccountWarning, { color: colors.textSecondary }]}>
+            This action will permanently delete your account and all associated data. This cannot be undone.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -292,5 +385,21 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  deleteAccountButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  deleteAccountText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  deleteAccountWarning: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
