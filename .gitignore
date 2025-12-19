@@ -34,5 +34,9 @@ yarn-error.*
 # local env files
 .env*.local
 
+# Firebase config files (sensitive)
+google-services.json
+GoogleService-Info.plist
+
 # typescript
 *.tsbuildinfo
