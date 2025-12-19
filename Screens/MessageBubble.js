@@ -23,23 +23,36 @@ const MessageBubble = ({ text, fromSelf }) => {
 const styles = StyleSheet.create({
   bubble: {
     maxWidth: '75%',
-    padding: 10,
-    borderRadius: 16,
-    marginVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 20,
+    marginVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   self: {
-    backgroundColor: '#194a7a',
+    backgroundColor: '#0C2340',
     alignSelf: 'flex-end',
-    borderBottomRightRadius: 0,
+    borderBottomRightRadius: 6,
+    shadowColor: '#0C2340',
+    shadowOpacity: 0.15,
   },
   other: {
-    backgroundColor: '#e5e5e5',
+    backgroundColor: 'rgba(233, 236, 239, 0.9)',
     alignSelf: 'flex-start',
-    borderBottomLeftRadius: 0,
+    borderBottomLeftRadius: 6,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
   },
   text: {
     fontSize: 16,
     color: '#000',
+    lineHeight: 22,
+    fontWeight: '500',
+    letterSpacing: -0.1,
   },
 });
 
