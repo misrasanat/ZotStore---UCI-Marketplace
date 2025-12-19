@@ -93,6 +93,8 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const handleDeleteAccount = async () => {
+    if (deleteLoading) return; // Prevent multiple simultaneous deletion attempts
+    
     try {
       const confirmed = await showDeleteAccountConfirmation(async () => {
         try {
@@ -100,6 +102,8 @@ export default function SettingsScreen({ navigation }) {
             Alert.alert('Error', 'User information not available.');
             return;
           }
+
+          setDeleteLoading(true);
 
           // Attempt to delete the account
           await deleteUserAccount(uid);
@@ -158,12 +162,15 @@ export default function SettingsScreen({ navigation }) {
               'An error occurred while deleting your account. Please try again or contact support.'
             );
           }
+        } finally {
+          setDeleteLoading(false);
         }
       });
       
     } catch (error) {
       console.error('Error in handleDeleteAccount:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      setDeleteLoading(false);
     }
   };
 
